@@ -28,7 +28,8 @@ describe("loadEnv", () => {
   });
 
   it("rejects a missing DATABASE_URL, naming the key", () => {
-    const { DATABASE_URL: _omit, ...rest } = valid;
+    const rest: Record<string, string> = { ...valid };
+    delete rest.DATABASE_URL;
     expect(() => loadEnv(rest)).toThrow(/DATABASE_URL/);
   });
 });
