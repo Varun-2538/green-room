@@ -1,16 +1,22 @@
 import Link from "next/link";
+import { DeskChat } from "@/components/DeskChat";
 import { NewEpisodeForm } from "@/components/forms";
 import { PipelineBoard } from "@/components/PipelineBoard";
 import { Badge, Card, PageTitle } from "@/components/ui";
 import { requireCreator } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
+import { loadChat } from "@/lib/chat/history";
 import { listEpisodes } from "@/lib/episodes";
 import { listAllGuests } from "@/lib/guests";
 
 export default async function DeskPage() {
   const db = getDb();
   const creator = await requireCreator(db, "/desk");
-  const [episodes, guests] = await Promise.all([listEpisodes(db, creator.id), listAllGuests(db, creator.id)]);
+  const [episodes, guests, chat] = await Promise.all([
+    listEpisodes(db, creator.id),
+    listAllGuests(db, creator.id),
+    loadChat(db, creator.id, null),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -45,6 +51,14 @@ export default async function DeskPage() {
         <h2 className="font-display text-xl font-semibold">Pipeline</h2>
         <PipelineBoard guests={guests} />
       </section>
+
+      <Card className="space-y-3">
+        <h2 className="font-display text-xl font-semibold">Ask Green Room</h2>
+        <DeskChat
+          initialMessages={chat}
+          suggestions={["Who is in my pipeline?", "Who hasn't answered yet?", "How many invites can I send today?"]}
+        />
+      </Card>
     </div>
   );
 }

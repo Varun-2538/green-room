@@ -103,7 +103,7 @@ export async function buildBrief(input: BriefInput, deps: BriefDeps): Promise<Br
 
   const { output } = await generateText({
     model: deps.model,
-    system: SYSTEM,
+    instructions: SYSTEM,
     output: Output.object({ schema: briefSchema }),
     providerOptions: lowReasoning,
     prompt: [

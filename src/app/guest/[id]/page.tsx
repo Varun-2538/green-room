@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BriefPanel } from "@/components/BriefPanel";
+import { DeskChat } from "@/components/DeskChat";
 import { Badge, Card, PageTitle } from "@/components/ui";
 import { requireCreator } from "@/lib/auth/session";
 import { getLatestBrief } from "@/lib/brief";
+import { loadChat } from "@/lib/chat/history";
 import { getDb } from "@/lib/db/client";
 import { env } from "@/lib/env";
 import { getGuest } from "@/lib/guests";
@@ -19,10 +21,11 @@ export default async function GuestPage(props: PageProps<"/guest/[id]">) {
   const creator = await requireCreator(db, `/guest/${id}`);
   const guest = await getGuest(db, creator.id, id);
   if (!guest) notFound();
-  const [brief, invitesLeft, invites] = await Promise.all([
+  const [brief, invitesLeft, invites, chat] = await Promise.all([
     getLatestBrief(db, guest.id),
     invitesLeftToday(db, creator.id),
     listInvitesForGuest(db, creator.id, guest.id),
+    loadChat(db, creator.id, guest.id),
   ]);
 
   return (
@@ -66,6 +69,15 @@ export default async function GuestPage(props: PageProps<"/guest/[id]">) {
           </ul>
         </Card>
       </div>
+
+      <Card className="space-y-3">
+        <h2 className="font-display text-xl font-semibold">Ask Green Room about {guest.name}</h2>
+        <DeskChat
+          guestId={guest.id}
+          initialMessages={chat}
+          suggestions={[`What should I ask ${guest.name}?`, `Draft a warm invite for ${guest.name}`, `What angle fits ${guest.name}?`]}
+        />
+      </Card>
     </div>
   );
 }

@@ -38,7 +38,7 @@ export async function draftInvite(i: DraftInput, deps: { model: LanguageModel })
   const facts = i.brief?.facts.map((f) => `- ${f.text}`).join("\n") ?? "";
   const { output } = await generateText({
     model: deps.model,
-    system: SYSTEM,
+    instructions: SYSTEM,
     output: Output.object({ schema: draftSchema }),
     providerOptions: lowReasoning,
     prompt: [
