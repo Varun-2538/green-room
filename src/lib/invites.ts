@@ -1,8 +1,9 @@
-import { and, count, desc, eq, gte } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNull } from "drizzle-orm";
 import { customAlphabet } from "nanoid";
 import type { Db } from "@/lib/db/client";
-import { creators, type Invite, invites } from "@/lib/db/schema";
+import { creators, guests, type Invite, type InviteAnswer, invites } from "@/lib/db/schema";
 import { getGuest, NotFoundError, setGuestStatus } from "@/lib/guests";
+import type { PipelineEvent } from "@/lib/pipeline";
 import { istDayStart, nextIstMidnight } from "@/lib/time";
 
 export const DAILY_INVITE_LIMIT = 5;
@@ -74,4 +75,82 @@ export async function listInvitesForGuest(db: Db, creatorId: string, guestId: st
     .from(invites)
     .where(and(eq(invites.creatorId, creatorId), eq(invites.guestId, guestId)))
     .orderBy(desc(invites.createdAt));
+}
+
+export type InviteCard = {
+  code: string;
+  message: string;
+  angle: string;
+  timeOptions: string[];
+  showName: string;
+  showPitch?: string;
+  creatorName: string;
+  creatorPhotoUrl?: string;
+  verified: boolean;
+  guestName: string;
+  openedAt: Date | null;
+  answer?: InviteAnswer;
+  answerNote?: string;
+};
+
+const MAX_ANSWER_NOTE = 500;
+
+const ANSWER_EVENT: Record<InviteAnswer, PipelineEvent> = {
+  accepted: "answered_accepted",
+  time_suggested: "answered_time",
+  declined: "answered_declined",
+};
+
+async function findInvite(db: Db, code: string) {
+  const [row] = await db
+    .select({ invite: invites, creator: creators, guestName: guests.name })
+    .from(invites)
+    .innerJoin(creators, eq(invites.creatorId, creators.id))
+    .innerJoin(guests, eq(invites.guestId, guests.id))
+    .where(eq(invites.code, code))
+    .limit(1);
+  return row ?? null;
+}
+
+/** The public card a guest sees. Only what the creator chose to send, plus the verified flag. */
+export async function getInviteByCode(db: Db, code: string): Promise<InviteCard | null> {
+  const row = await findInvite(db, code);
+  if (!row) return null;
+  const { invite, creator, guestName } = row;
+  return {
+    code: invite.code,
+    message: invite.message,
+    angle: invite.angle,
+    timeOptions: invite.timeOptions,
+    showName: creator.showName ?? `${creator.name}'s show`,
+    ...(creator.showPitch ? { showPitch: creator.showPitch } : {}),
+    creatorName: creator.name,
+    ...(creator.photoUrl ? { creatorPhotoUrl: creator.photoUrl } : {}),
+    verified: Boolean(creator.verifiedAt),
+    guestName,
+    openedAt: invite.openedAt,
+    ...(invite.answer ? { answer: invite.answer } : {}),
+    ...(invite.answerNote ? { answerNote: invite.answerNote } : {}),
+  };
+}
+
+/** Records the first time someone other than the creator opens the card. */
+export async function markOpened(db: Db, code: string, viewerCreatorId: string | null, now: Date = new Date()): Promise<void> {
+  const row = await findInvite(db, code);
+  if (!row || row.invite.creatorId === viewerCreatorId || row.invite.openedAt) return;
+  await db.update(invites).set({ openedAt: now }).where(and(eq(invites.id, row.invite.id), isNull(invites.openedAt)));
+  await setGuestStatus(db, row.invite.creatorId, row.invite.guestId, "invite_opened");
+}
+
+export async function recordAnswer(
+  db: Db,
+  code: string,
+  a: { answer: InviteAnswer; note?: string },
+): Promise<InviteCard | null> {
+  const row = await findInvite(db, code);
+  if (!row) return null;
+  const note = a.note?.trim().slice(0, MAX_ANSWER_NOTE) || null;
+  await db.update(invites).set({ answer: a.answer, answerNote: note, answeredAt: new Date() }).where(eq(invites.id, row.invite.id));
+  await setGuestStatus(db, row.invite.creatorId, row.invite.guestId, ANSWER_EVENT[a.answer]);
+  return getInviteByCode(db, code);
 }

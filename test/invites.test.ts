@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { creators, guests } from "@/lib/db/schema";
 import { createEpisode } from "@/lib/episodes";
 import { addGuest } from "@/lib/guests";
-import { createInvite, invitesLeftToday, listInvitesForGuest } from "@/lib/invites";
+import { createInvite, getInviteByCode, invitesLeftToday, listInvitesForGuest, markOpened, recordAnswer } from "@/lib/invites";
 import { makeTestDb } from "./helpers/db";
 
 const NOON_IST = new Date("2026-10-30T06:30:00Z");
@@ -93,5 +93,76 @@ describe("listInvitesForGuest", () => {
     await createInvite(db, creator.id, { ...draft(guest.id), angle: "second" }, new Date(NOON_IST.getTime() + 1000));
     expect((await listInvitesForGuest(db, creator.id, guest.id)).map((i) => i.angle)).toEqual(["second", "first"]);
     expect(await listInvitesForGuest(db, "00000000-0000-4000-8000-000000000000", guest.id)).toEqual([]);
+  });
+});
+
+describe("guest invite card", () => {
+  async function invited() {
+    const ctx = await setup();
+    const result = await createInvite(ctx.db, ctx.creator.id, draft(ctx.guest.id), NOON_IST);
+    if (!result.ok) throw new Error("setup failed");
+    return { ...ctx, code: result.invite.code };
+  }
+  const status = async (db: Awaited<ReturnType<typeof setup>>["db"], id: string) =>
+    (await db.select().from(guests).where(eq(guests.id, id)))[0].status;
+
+  it("returns null for an unknown code", async () => {
+    const { db } = await setup();
+    expect(await getInviteByCode(db, "nope-nope-no")).toBeNull();
+  });
+
+  it("shows the card with the creator's show and a verified badge", async () => {
+    const { db, code } = await invited();
+    expect(await getInviteByCode(db, code)).toMatchObject({
+      code,
+      showName: "In Between",
+      creatorName: "Varun",
+      guestName: "Arun",
+      verified: true,
+      message: "Hi Arun, would you come on In Between?",
+      timeOptions: ["Sat 11:00", "Sun 16:00"],
+    });
+  });
+
+  it("does not count the creator opening their own link", async () => {
+    const { db, creator, guest, code } = await invited();
+    await markOpened(db, code, creator.id);
+    expect((await getInviteByCode(db, code))?.openedAt).toBeNull();
+    expect(await status(db, guest.id)).toBe("invited");
+  });
+
+  it("records the first open by someone else, and keeps that time", async () => {
+    const { db, guest, code } = await invited();
+    const first = new Date("2026-10-30T07:00:00Z");
+    await markOpened(db, code, null, first);
+    await markOpened(db, code, null, new Date("2026-10-30T08:00:00Z"));
+    expect((await getInviteByCode(db, code))?.openedAt?.toISOString()).toBe(first.toISOString());
+    expect(await status(db, guest.id)).toBe("opened");
+  });
+
+  it("records an answer and lets the guest change their mind", async () => {
+    const { db, guest, code } = await invited();
+    expect((await recordAnswer(db, code, { answer: "accepted" }))?.answer).toBe("accepted");
+    expect(await status(db, guest.id)).toBe("accepted");
+    await recordAnswer(db, code, { answer: "declined", note: "Travelling, sorry" });
+    expect(await status(db, guest.id)).toBe("declined");
+    expect(await getInviteByCode(db, code)).toMatchObject({ answer: "declined", answerNote: "Travelling, sorry" });
+  });
+
+  it("limits the answer note to 500 characters", async () => {
+    const { db, code } = await invited();
+    const card = await recordAnswer(db, code, { answer: "time_suggested", note: "n".repeat(900) });
+    expect(card?.answerNote).toHaveLength(500);
+  });
+
+  it("returns null when answering an unknown code", async () => {
+    const { db } = await setup();
+    expect(await recordAnswer(db, "nope-nope-no", { answer: "accepted" })).toBeNull();
+  });
+
+  it("shows no verified badge when the creator is not verified", async () => {
+    const { db, creator, code } = await invited();
+    await db.update(creators).set({ verifiedAt: null }).where(eq(creators.id, creator.id));
+    expect((await getInviteByCode(db, code))?.verified).toBe(false);
   });
 });
