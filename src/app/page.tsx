@@ -9,7 +9,7 @@ import { env } from "@/lib/env";
 const steps = [
   ["Find", "Your Agent Village agent picks guests from your Mosaic circle, by episode topic."],
   ["Research", "Green Room reads their public work with TinyFish: their story, recent talks, questions to ask."],
-  ["Invite", "Grok drafts the invite. You send it as a verified human: World ID, 5 a day."],
+  ["Invite", "AI drafts the invite (an open model on Groq). You send it as a verified human: World ID, 5 a day."],
   ["Book", "The guest opens a card and answers. Your desk tracks every booking."],
 ];
 

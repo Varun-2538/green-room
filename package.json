@@ -14,8 +14,8 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@ai-sdk/groq": "^4.0.73",
     "@ai-sdk/react": "^4.0.161",
-    "@ai-sdk/xai": "^5.0.33",
     "@modelcontextprotocol/server": "^2.4.0",
     "@neondatabase/serverless": "^1.2.0",
     "@worldcoin/idkit": "^4.6.0",

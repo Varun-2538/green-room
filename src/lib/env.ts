@@ -9,8 +9,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_WORLD_RP_ID: z.string().min(1),
   RP_SIGNING_KEY: z.string().min(1),
   TINYFISH_API_KEY: z.string().min(1),
-  XAI_API_KEY: z.string().min(1),
-  XAI_MODEL: z.string().min(1).default("grok-4.7"),
+  GROQ_API_KEY: z.string().min(1),
+  GROQ_MODEL: z.string().min(1).default("openai/gpt-oss-120b"),
   NEXT_PUBLIC_APP_URL: z.url(),
 });
 

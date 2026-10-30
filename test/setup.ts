@@ -8,6 +8,6 @@ Object.assign(process.env, {
   NEXT_PUBLIC_WORLD_RP_ID: "rp_test",
   RP_SIGNING_KEY: "0".repeat(64),
   TINYFISH_API_KEY: "tf_test",
-  XAI_API_KEY: "xai_test",
+  GROQ_API_KEY: "gsk_test",
   NEXT_PUBLIC_APP_URL: "https://green-room.test",
 });

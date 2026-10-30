@@ -2,7 +2,7 @@
 
 **Mosaic tells you who. Green Room gets them on your show.**
 
-A booking desk for creators at Edge City India. Your Agent Village agent finds guests through Mosaic. Green Room researches them with TinyFish, drafts the invite with Grok, issues a World ID–verified invite card (5 per human per day), and tracks the guest's answer.
+A booking desk for creators at Edge City India. Your Agent Village agent finds guests through Mosaic. Green Room researches them with TinyFish, drafts the invite with an open model on Groq, issues a World ID–verified invite card (5 per human per day), and tracks the guest's answer.
 
 - Design: [docs/superpowers/specs/2026-10-29-green-room-design.md](docs/superpowers/specs/2026-10-29-green-room-design.md)
 - Plan: [docs/superpowers/plans/2026-10-30-green-room.md](docs/superpowers/plans/2026-10-30-green-room.md)
@@ -32,7 +32,7 @@ npm run build
 | World ID (one human, one account) | `src/lib/worldid/verify.ts`, `src/app/verify/` |
 | Agent handoff ("Add to desk" link, public fields only) | `src/lib/handoff.ts`, `src/app/add/` |
 | Guest research (TinyFish search + fetch, sourced facts) | `src/lib/tinyfish.ts`, `src/lib/brief.ts` |
-| Invite drafting (Grok) and the 5-a-day limit | `src/lib/invite-draft.ts`, `src/lib/invites.ts` |
+| Invite drafting (Groq, `openai/gpt-oss-120b`) and the 5-a-day limit | `src/lib/invite-draft.ts`, `src/lib/invites.ts` |
 | Public invite card | `src/app/i/[code]/` |
 | Desk chat assistant | `src/lib/chat/`, `src/app/api/chat/` |
 | Public MCP for the Agent Village mini-app | `src/app/api/mcp/`, `mini-app/green-room/` |

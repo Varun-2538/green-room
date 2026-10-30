@@ -1,11 +1,11 @@
-import { createXai } from "@ai-sdk/xai";
+import { createGroq } from "@ai-sdk/groq";
 import type { LanguageModel } from "ai";
 import { env } from "@/lib/env";
 
-/** Grok via xAI. The model id comes from XAI_MODEL so it can change without a deploy of code. */
+/** An open model hosted on Groq. The model id comes from GROQ_MODEL so it can change without a code change. */
 export function getModel(): LanguageModel {
-  return createXai({ apiKey: env.XAI_API_KEY })(env.XAI_MODEL);
+  return createGroq({ apiKey: env.GROQ_API_KEY })(env.GROQ_MODEL);
 }
 
 /** Keep reasoning short: briefs and drafts are summarising, not solving. */
-export const lowReasoning = { xai: { reasoningEffort: "low" as const } };
+export const lowReasoning = { groq: { reasoningEffort: "low" as const } };

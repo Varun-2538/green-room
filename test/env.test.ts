@@ -10,17 +10,17 @@ const valid = {
   NEXT_PUBLIC_WORLD_RP_ID: "rp_test",
   RP_SIGNING_KEY: "deadbeef",
   TINYFISH_API_KEY: "tf_test",
-  XAI_API_KEY: "xai_test",
+  GROQ_API_KEY: "gsk_test",
   NEXT_PUBLIC_APP_URL: "https://green-room.example",
 };
 
 describe("loadEnv", () => {
-  it("defaults XAI_MODEL to grok-4.7 when unset", () => {
-    expect(loadEnv(valid).XAI_MODEL).toBe("grok-4.7");
+  it("defaults GROQ_MODEL to openai/gpt-oss-120b when unset", () => {
+    expect(loadEnv(valid).GROQ_MODEL).toBe("openai/gpt-oss-120b");
   });
 
-  it("keeps an explicit XAI_MODEL", () => {
-    expect(loadEnv({ ...valid, XAI_MODEL: "grok-4.6" }).XAI_MODEL).toBe("grok-4.6");
+  it("keeps an explicit GROQ_MODEL", () => {
+    expect(loadEnv({ ...valid, GROQ_MODEL: "llama-3.3-70b-versatile" }).GROQ_MODEL).toBe("llama-3.3-70b-versatile");
   });
 
   it("rejects a SESSION_SECRET shorter than 32 characters, naming the key", () => {
@@ -31,5 +31,11 @@ describe("loadEnv", () => {
     const rest: Record<string, string> = { ...valid };
     delete rest.DATABASE_URL;
     expect(() => loadEnv(rest)).toThrow(/DATABASE_URL/);
+  });
+
+  it("requires a Groq API key, naming the key", () => {
+    const rest: Record<string, string> = { ...valid };
+    delete rest.GROQ_API_KEY;
+    expect(() => loadEnv(rest)).toThrow(/GROQ_API_KEY/);
   });
 });
