@@ -48,3 +48,28 @@ describe("chat history", () => {
     expect(loaded[0].id).toBe("10");
   });
 });
+
+describe("forModel", () => {
+  it("keeps what was said but drops earlier tool results, so every answer uses fresh data", async () => {
+    const { forModel } = await import("@/lib/chat/history");
+    const old = [
+      { id: "1", role: "user", parts: [{ type: "text", text: "Who is in my pipeline?" }] },
+      {
+        id: "2",
+        role: "assistant",
+        parts: [
+          { type: "step-start" },
+          { type: "tool-list_pipeline", toolCallId: "c1", state: "output-available", input: {}, output: { guests: [{ name: "Arun", status: "shortlisted" }] } },
+          { type: "text", text: "Arun is shortlisted." },
+        ],
+      },
+      { id: "3", role: "assistant", parts: [{ type: "tool-list_pipeline", toolCallId: "c2", state: "output-available", input: {}, output: {} }] },
+      { id: "4", role: "user", parts: [{ type: "text", text: "Who said yes?" }] },
+    ] as unknown as import("ai").UIMessage[];
+    expect(forModel(old)).toEqual([
+      old[0],
+      { id: "2", role: "assistant", parts: [{ type: "text", text: "Arun is shortlisted." }] },
+      old[3],
+    ]);
+  });
+});

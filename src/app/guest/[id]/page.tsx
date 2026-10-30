@@ -12,6 +12,9 @@ import { getGuest } from "@/lib/guests";
 import { DAILY_INVITE_LIMIT, invitesLeftToday, listInvitesForGuest } from "@/lib/invites";
 import { InviteBuilder } from "@/components/InviteBuilder";
 import { InviteHistory } from "@/components/InviteHistory";
+import { TelegramField, type TelegramHelp } from "@/components/SendToGuest";
+import { agentDeepLink, telegramLookupPrompt } from "@/lib/handoff";
+import { telegramLink } from "@/lib/send-channels";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -22,6 +25,14 @@ export default async function GuestPage(props: PageProps<"/guest/[id]">) {
   const creator = await requireCreator(db, `/guest/${id}`);
   const guest = await getGuest(db, creator.id, id);
   if (!guest) notFound();
+  // The agent's Rolodex lookup links back here with ?tg=, which prefills the Telegram field until it is saved.
+  const tgParam = (await props.searchParams).tg;
+  const hasTelegram = guest.links.some((l) => telegramLink(l));
+  const suggested = !hasTelegram && typeof tgParam === "string" ? (telegramLink(tgParam) ?? undefined) : undefined;
+  const telegram: TelegramHelp = {
+    ...(suggested ? { suggested } : {}),
+    agentHref: agentDeepLink(creator.agentUsername, telegramLookupPrompt({ guestName: guest.name, appUrl: env.NEXT_PUBLIC_APP_URL, guestId: guest.id })),
+  };
   const [brief, invitesLeft, invites, chat] = await Promise.all([
     getLatestBrief(db, guest.id),
     invitesLeftToday(db, creator.id),
@@ -53,6 +64,7 @@ export default async function GuestPage(props: PageProps<"/guest/[id]">) {
             guestId={guest.id}
             guestName={guest.name}
             guestLinks={guest.links}
+            telegram={telegram}
             verified={Boolean(creator.verifiedAt)}
             invitesLeft={invitesLeft}
             dailyLimit={DAILY_INVITE_LIMIT}
@@ -67,6 +79,7 @@ export default async function GuestPage(props: PageProps<"/guest/[id]">) {
             usesBookingLink={Boolean(creator.schedulingUrl)}
             guestId={guest.id}
             guestLinks={guest.links}
+            telegram={telegram}
           />
         </Card>
 
@@ -74,6 +87,9 @@ export default async function GuestPage(props: PageProps<"/guest/[id]">) {
           <h2 className="font-display text-xl font-semibold">About</h2>
           {guest.lookingToMeet ? <p className="text-sm"><span className="text-muted">Looking to meet:</span> {guest.lookingToMeet}</p> : null}
           {guest.creatorNote ? <p className="text-sm"><span className="text-muted">Your note:</span> {guest.creatorNote}</p> : null}
+          {!hasTelegram ? (
+            <TelegramField guestId={guest.id} guestName={guest.name} lead={`No Telegram for ${guest.name} yet.`} {...telegram} />
+          ) : null}
           <ul className="space-y-1 text-sm">
             {guest.links.map((link) => (
               <li key={link}><a href={link} target="_blank" rel="noreferrer" className="text-brand underline">{link}</a></li>
@@ -87,7 +103,7 @@ export default async function GuestPage(props: PageProps<"/guest/[id]">) {
         <DeskChat
           guestId={guest.id}
           initialMessages={chat}
-          suggestions={[`What should I ask ${guest.name}?`, `Draft a warm invite for ${guest.name}`, `What angle fits ${guest.name}?`]}
+          suggestions={[`What should I ask ${guest.name}?`, `Give me a 30-second intro for ${guest.name}`, `What angle fits ${guest.name}?`, `Draft a warm invite for ${guest.name}`, `What has ${guest.name} worked on recently?`]}
         />
       </Card>
     </div>

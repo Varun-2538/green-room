@@ -68,9 +68,19 @@ export function buildAgentPrompt(o: { showName: string; topic: string; appUrl: s
     `Green Room: using my Mosaic pair pages and top matches, find 3 guests for my show "${o.showName}" on "${o.topic}".`,
     "For each person, look them up in the Rolodex and tell me why we fit (that part is for me only).",
     `Then give me an "Add to desk" link exactly like ${link}`,
+    "For tg, use their Telegram username from their Rolodex profile: it's how I'll message them.",
     "URL-encode each value and leave out any part you don't have.",
     "Put only public Rolodex info in the link, never anything from our Mosaic page.",
     "If only a few of my pair pages are written, tell me which links to open so you can search more of my circle.",
+  ].join("\n");
+}
+
+/** Asks the agent for a guest's Telegram from the Rolodex; its reply links back to the guest page with it filled in. */
+export function telegramLookupPrompt(o: { guestName: string; appUrl: string; guestId: string }): string {
+  return [
+    `Green Room: look up ${o.guestName} in the Rolodex and find their Telegram username on their profile.`,
+    `Reply with only this link, with the username filled in: ${o.appUrl}/guest/${o.guestId}?tg=<telegram_username>`,
+    "If their profile has no Telegram, just say so.",
   ].join("\n");
 }
 

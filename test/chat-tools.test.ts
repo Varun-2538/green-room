@@ -29,7 +29,10 @@ describe("deskTools", () => {
   it("lists the creator's pipeline", async () => {
     const { tools } = await setup();
     const out = await tools.list_pipeline.execute!({}, opts);
-    expect(out).toMatchObject({ guests: [{ name: "Arun", status: "shortlisted", episode: "Dreams and detours" }] });
+    expect(out).toMatchObject({
+      guests: [{ name: "Arun", status: "shortlisted", stage: "Shortlisted", lane: "Preparing", episode: "Dreams and detours" }],
+      episodes: [{ topic: "Dreams and detours", guests: 1 }],
+    });
   });
 
   it.each(["get_brief", "draft_invite", "set_status"] as const)("%s refuses a guest the creator doesn't own", async (name) => {

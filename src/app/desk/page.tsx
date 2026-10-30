@@ -78,7 +78,7 @@ export default async function DeskPage() {
         <h2 className="font-display text-xl font-semibold">Ask Green Room</h2>
         <DeskChat
           initialMessages={chat}
-          suggestions={["Who is in my pipeline?", "Who hasn't answered yet?", "How many invites can I send today?"]}
+          suggestions={["Who said yes?", "Who hasn't answered yet?", "Who is ready to invite next?", "Which episode needs more guests?", "How many invites can I send today?"]}
         />
       </Card>
     </div>

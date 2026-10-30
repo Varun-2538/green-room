@@ -26,3 +26,15 @@ export async function saveChat(db: Db, creatorId: string, guestId: string | null
     await tx.insert(chatMessages).values({ creatorId, guestId, role: ROLE, content: kept });
   });
 }
+
+/**
+ * What the model sees of the saved conversation: what was said, without earlier tool results. Old results go stale
+ * (a guest says yes, a brief is built), so the model has to call its tools again for current data.
+ */
+export function forModel(messages: UIMessage[]): UIMessage[] {
+  return messages.flatMap((m) => {
+    if (m.role !== "assistant") return [m];
+    const parts = m.parts.filter((p) => p.type === "text");
+    return parts.length > 0 ? [{ ...m, parts }] : [];
+  });
+}

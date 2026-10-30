@@ -40,19 +40,10 @@ export function DeskChat({
   return (
     <div className="flex flex-col gap-3">
       <div className="max-h-[28rem] space-y-3 overflow-y-auto">
-        {messages.length === 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {suggestions.map((s) => (
-              <button key={s} onClick={() => send(s)} className="rounded-full border border-line px-3 py-1 text-sm hover:bg-background">
-                {s}
-              </button>
-            ))}
-          </div>
-        ) : null}
         {messages.map((m) => (
           <div key={m.id} className={m.role === "user" ? "ml-8 rounded-2xl bg-brand px-3 py-2 text-sm text-brand-ink" : "mr-8 space-y-2 text-sm"}>
             {m.parts.map((part, i) => {
-              if (part.type === "text") return <p key={i} className="whitespace-pre-wrap">{part.text}</p>;
+              if (part.type === "text") return <p key={i} className="whitespace-pre-wrap">{part.text.replace(/\*\*(.+?)\*\*/g, "$1")}</p>;
               if (part.type.startsWith("tool-") && "state" in part) {
                 const draft = part.type === "tool-draft_invite" && part.state === "output-available" ? (part.output as DraftOutput) : null;
                 return (
@@ -70,6 +61,13 @@ export function DeskChat({
         ))}
         {status === "submitted" ? <p className="text-sm text-muted">Thinking…</p> : null}
         {error ? <p className="text-sm text-bad">The assistant couldn&apos;t answer just now. Try again.</p> : null}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {suggestions.map((s) => (
+          <button key={s} type="button" onClick={() => send(s)} disabled={busy} className="rounded-full border border-line px-3 py-1 text-sm hover:bg-background disabled:opacity-50">
+            {s}
+          </button>
+        ))}
       </div>
       <form
         onSubmit={(e) => {

@@ -3,9 +3,11 @@ import { z } from "zod";
 import { type Brief, buildBrief, getLatestBrief, saveBrief } from "@/lib/brief";
 import type { Db } from "@/lib/db/client";
 import type { Creator } from "@/lib/db/schema";
+import { listEpisodes } from "@/lib/episodes";
 import { getGuest, listAllGuests, setGuestStatus } from "@/lib/guests";
 import { draftInvite } from "@/lib/invite-draft";
 import { DAILY_INVITE_LIMIT, invitesLeftToday } from "@/lib/invites";
+import { laneFor, STAGE_LABEL } from "@/lib/pipeline";
 import type { tinyfishFetch, tinyfishSearch } from "@/lib/tinyfish";
 
 export type DeskToolContext = {
@@ -49,16 +51,23 @@ export function deskTools(ctx: DeskToolContext) {
 
   return {
     list_pipeline: tool({
-      description: "List every guest on the creator's desk with their id, episode and booking status.",
+      description:
+        "List every guest on the creator's desk (id, episode, status, stage, and lane: Preparing, Invited, Said yes or Done), and every episode with its guest count.",
       inputSchema: z.object({}),
-      execute: async () => ({
-        guests: (await listAllGuests(db, creator.id)).map((g) => ({
-          id: g.id,
-          name: g.name,
-          status: g.status,
-          episode: g.episodeTopic,
-        })),
-      }),
+      execute: async () => {
+        const [all, episodes] = await Promise.all([listAllGuests(db, creator.id), listEpisodes(db, creator.id)]);
+        return {
+          guests: all.map((g) => ({
+            id: g.id,
+            name: g.name,
+            status: g.status,
+            stage: STAGE_LABEL[g.status],
+            lane: laneFor(g.status).title,
+            episode: g.episodeTopic,
+          })),
+          episodes: episodes.map((e) => ({ topic: e.topic, guests: e.guestCount })),
+        };
+      },
     }),
 
     get_brief: tool({

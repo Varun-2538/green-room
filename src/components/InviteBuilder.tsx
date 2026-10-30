@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { SendToGuest } from "@/components/SendToGuest";
+import { SendToGuest, type TelegramHelp } from "@/components/SendToGuest";
 import { Button, inputClass } from "@/components/ui";
 import { readJsonResponse } from "@/lib/http";
 import type { InviteTone } from "@/lib/invite-draft";
@@ -12,13 +12,14 @@ type Props = {
   guestId: string;
   guestName: string;
   guestLinks: string[];
+  telegram: TelegramHelp;
   verified: boolean;
   invitesLeft: number;
   dailyLimit: number;
   schedulingUrl: string | null;
 };
 
-export function InviteBuilder({ guestId, guestName, guestLinks, verified, invitesLeft, dailyLimit, schedulingUrl }: Props) {
+export function InviteBuilder({ guestId, guestName, guestLinks, telegram, verified, invitesLeft, dailyLimit, schedulingUrl }: Props) {
   const router = useRouter();
   const [tone, setTone] = useState<InviteTone>("warm");
   const [note, setNote] = useState("");
@@ -177,7 +178,7 @@ export function InviteBuilder({ guestId, guestName, guestLinks, verified, invite
       {url ? (
         <div className="space-y-3 rounded-xl bg-good/10 p-3 text-sm">
           <p className="font-medium text-good">Invite ready. Send it to {guestName}:</p>
-          <SendToGuest guestId={guestId} guestName={guestName} links={guestLinks} message={message} url={url} />
+          <SendToGuest guestId={guestId} guestName={guestName} telegram={telegram} links={guestLinks} message={message} url={url} />
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted">Or copy just the link:</span>
             <code className="break-all rounded bg-surface px-2 py-1">{url}</code>

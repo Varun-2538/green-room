@@ -1,5 +1,5 @@
 import { CalendarButtons } from "@/components/CalendarButtons";
-import { SendToGuest } from "@/components/SendToGuest";
+import { SendToGuest, type TelegramHelp } from "@/components/SendToGuest";
 import { Badge } from "@/components/ui";
 import { formatSlotIst } from "@/lib/calendar";
 import type { Invite } from "@/lib/db/schema";
@@ -20,6 +20,7 @@ export function InviteHistory({
   usesBookingLink,
   guestId,
   guestLinks,
+  telegram,
   appUrl,
   showName,
   creatorName,
@@ -33,6 +34,7 @@ export function InviteHistory({
   usesBookingLink: boolean;
   guestId: string;
   guestLinks: string[];
+  telegram: TelegramHelp;
 }) {
   if (invites.length === 0) return null;
   return (
@@ -81,7 +83,7 @@ export function InviteHistory({
               </p>
             ) : null}
             {!invite.answer ? (
-              <SendToGuest guestId={guestId} guestName={guestName} links={guestLinks} message={invite.message} url={`${appUrl}/i/${invite.code}`} />
+              <SendToGuest guestId={guestId} guestName={guestName} telegram={telegram} links={guestLinks} message={invite.message} url={`${appUrl}/i/${invite.code}`} />
             ) : null}
           </li>
         );

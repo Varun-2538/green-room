@@ -128,3 +128,17 @@ describe("Telegram in the handoff", () => {
     expect(buildAgentPrompt({ showName: "S", topic: "T", appUrl: "https://x.test", episodeId: EP })).toContain("tg=<telegram_username>");
   });
 });
+
+describe("Telegram from the Rolodex", () => {
+  it("tells the agent to copy the guest's Telegram from their Rolodex profile", () => {
+    expect(buildAgentPrompt({ showName: "S", topic: "T", appUrl: "https://x.test", episodeId: EP })).toMatch(/Telegram username from their Rolodex profile/);
+  });
+
+  it("asks the agent to look up an existing guest's Telegram and reply with a link back to their page", async () => {
+    const { telegramLookupPrompt } = await import("@/lib/handoff");
+    const prompt = telegramLookupPrompt({ guestName: "Yudhishthra Sugumaran", appUrl: "https://x.test", guestId: EP });
+    expect(prompt).toContain("Yudhishthra Sugumaran");
+    expect(prompt).toContain("Rolodex");
+    expect(prompt).toContain(`https://x.test/guest/${EP}?tg=<telegram_username>`);
+  });
+});
