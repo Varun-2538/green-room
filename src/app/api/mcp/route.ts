@@ -11,8 +11,9 @@ export const maxDuration = 60;
 function handlerFor(request: Request) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const deps: McpDeps = {
-    search: tinyfishSearch,
-    fetchPages: tinyfishFetch,
+    // Agent Village gives a generic app 25 s: search, fetch and the model must all fit inside it.
+    search: (query, o) => tinyfishSearch(query, { ...o, timeoutMs: 6_000 }),
+    fetchPages: (urls, o) => tinyfishFetch(urls, { ...o, perUrlTimeoutMs: 8_000, timeoutMs: 10_000 }),
     model: getModel(),
     limiter: () => checkRateLimit(getDb(), `mcp:${ip}`, 30, 3600),
   };

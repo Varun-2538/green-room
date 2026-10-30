@@ -2,8 +2,8 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const skillBytes = readFileSync("mini-app/green-room/SKILL.md");
-const manifestText = readFileSync("mini-app/green-room/manifest.json", "utf8");
+const skillBytes = readFileSync("skills/green-room/SKILL.md");
+const manifestText = readFileSync("mini-apps/green-room/manifest.json", "utf8");
 const manifest = JSON.parse(manifestText);
 
 describe("green-room SKILL.md (Edge City mini-app rules)", () => {

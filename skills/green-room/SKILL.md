@@ -56,11 +56,10 @@ Say only what the brief says.
 For each guest the owner wants to keep, give a link in exactly this form, with
 every value URL-encoded and any missing part left out:
 
-`<desk>/add?n=<name>&x=<x_url>&gh=<github_url>&web=<other_url>&lm=<looking_to_meet>&t=<topic>`
+`https://green-room-eta.vercel.app/add?n=<name>&x=<x_url>&gh=<github_url>&web=<other_url>&lm=<looking_to_meet>&t=<topic>`
 
-`<desk>` is the Green Room address the owner gave you, or the one in their
-message. Put only public Rolodex information in the link, never anything from
-a Mosaic pair page. Never invite, message or introduce anyone from this skill:
+The link is for the owner to open; never fetch it yourself. Put only public
+Rolodex information in it, never anything from a Mosaic pair page. Never invite, message or introduce anyone from this skill:
 the owner sends invites from the desk, and introductions go through
 `index-network` when the owner asks.
 
@@ -73,4 +72,6 @@ the owner sends invites from the desk, and introductions go through
 - If a call fails, say Green Room can't be reached just now. Retry once at
   most, not in a loop.
 - If `village` answers `mini_app_not_installed`, say Green Room isn't
-  installed for them and point them to the desk website.
+  installed for them and point them to https://green-room-eta.vercel.app.
+- An error answer is `{"code", "detail"}`. For `rate_limited`, tell the owner
+  to try again later; for `unavailable`, say Green Room can't be reached.

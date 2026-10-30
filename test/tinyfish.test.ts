@@ -59,6 +59,13 @@ describe("tinyfishFetch", () => {
     });
   });
 
+  it("uses a caller's shorter per-URL timeout", async () => {
+    const fetch = vi.fn(async () => json({ results: [], errors: [] }));
+    await tinyfishFetch(["https://a.com"], { fetch, apiKey: "k", perUrlTimeoutMs: 8000 });
+    const body = JSON.parse(String((fetch.mock.calls[0] as unknown as [string, RequestInit])[1].body));
+    expect(body.per_url_timeout_ms).toBe(8000);
+  });
+
   it("sends at most 10 unique urls", async () => {
     const fetch = vi.fn(async () => json({ results: [], errors: [] }));
     const urls = ["https://dup.com", "https://dup.com", ...Array.from({ length: 12 }, (_, i) => `https://s${i}.com`)];

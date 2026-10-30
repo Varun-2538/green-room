@@ -35,12 +35,20 @@ const fetchedPage = z.object({
 });
 export type FetchedPage = { url: string; finalUrl: string; title?: string; text: string };
 
-type Options = { purpose?: string; fetch?: typeof fetch; apiKey?: string };
+type Options = {
+  purpose?: string;
+  fetch?: typeof fetch;
+  apiKey?: string;
+  /** Whole-request budget; callers with a hard deadline (the MCP path) pass a shorter one. */
+  timeoutMs?: number;
+  /** Per-URL render budget for fetch. */
+  perUrlTimeoutMs?: number;
+};
 
 async function call(url: string, init: RequestInit, o: Options): Promise<unknown> {
   const headers = new Headers(init.headers);
   headers.set("X-API-Key", o.apiKey ?? env.TINYFISH_API_KEY);
-  const response = await (o.fetch ?? fetch)(url, { ...init, headers, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+  const response = await (o.fetch ?? fetch)(url, { ...init, headers, signal: AbortSignal.timeout(o.timeoutMs ?? REQUEST_TIMEOUT_MS) });
   if (!response.ok) throw new TinyFishError(`TinyFish answered ${response.status}`, response.status);
   return response.json();
 }
@@ -73,7 +81,7 @@ export async function tinyfishFetch(
       body: JSON.stringify({
         urls: unique,
         format: "markdown",
-        per_url_timeout_ms: PER_URL_TIMEOUT_MS,
+        per_url_timeout_ms: o.perUrlTimeoutMs ?? PER_URL_TIMEOUT_MS,
         ...(o.purpose ? { purpose: o.purpose } : {}),
       }),
     },
