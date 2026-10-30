@@ -37,7 +37,8 @@ const FALLBACK_QUESTIONS = [
 
 const briefSchema = z.object({
   story: z.string(),
-  recentWork: z.array(z.object({ title: z.string(), url: z.string(), date: z.string().optional() })),
+  // Groq strict mode needs every key required, so an unknown date is null rather than absent.
+  recentWork: z.array(z.object({ title: z.string(), url: z.string(), date: z.string().nullable() })),
   questions: z.array(z.string()),
   facts: z.array(z.object({ text: z.string(), sourceUrl: z.string() })),
 });
@@ -126,7 +127,9 @@ export async function buildBrief(input: BriefInput, deps: BriefDeps): Promise<Br
   const story = limited ? `${output.story} (Based on search snippets only; limited public information was readable.)` : output.story;
   return {
     story,
-    recentWork: output.recentWork.filter((w) => known.has(w.url)),
+    recentWork: output.recentWork
+      .filter((w) => known.has(w.url))
+      .map(({ title, url, date }) => ({ title, url, ...(date ? { date } : {}) })),
     questions: toEightQuestions(output.questions),
     facts: output.facts.filter((f) => known.has(f.sourceUrl)),
     limited,

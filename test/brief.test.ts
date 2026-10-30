@@ -30,8 +30,8 @@ const pages = [
 const modelAnswer = {
   story: "Went from student club lead to CTO of Aqua0.",
   recentWork: [
-    { title: "EIP Hub talk", url: "https://eiphub.example/talk" },
-    { title: "Made up", url: "https://invented.example" },
+    { title: "EIP Hub talk", url: "https://eiphub.example/talk", date: null },
+    { title: "Made up", url: "https://invented.example", date: null },
   ],
   questions: Array.from({ length: 10 }, (_, i) => `Question ${i + 1}?`),
   facts: [
@@ -158,5 +158,36 @@ describe("saveBrief / getLatestBrief", () => {
   it("returns null when there is no brief", async () => {
     const db = await makeTestDb();
     expect(await getLatestBrief(db, "00000000-0000-4000-8000-000000000000")).toBeNull();
+  });
+});
+
+describe("schemas sent to the model (Groq strict structured output)", () => {
+  /** Groq rejects a JSON schema unless every object lists all of its properties in `required`. */
+  function optionalKeys(schema: unknown, path = "$"): string[] {
+    if (!schema || typeof schema !== "object") return [];
+    const s = schema as { type?: unknown; properties?: Record<string, unknown>; required?: string[]; items?: unknown };
+    const out: string[] = [];
+    if (s.properties) {
+      for (const key of Object.keys(s.properties)) {
+        if (!(s.required ?? []).includes(key)) out.push(`${path}.${key}`);
+        out.push(...optionalKeys(s.properties[key], `${path}.${key}`));
+      }
+    }
+    if (s.items) out.push(...optionalKeys(s.items, `${path}[]`));
+    return out;
+  }
+
+  it("brief: every field is required (nullable instead of optional)", async () => {
+    const ai = mockJsonModel(modelAnswer);
+    await buildBrief(input, { search: vi.fn(async () => searchResults), fetchPages: vi.fn(async () => ({ pages, failed: [] })), model: ai.model });
+    const format = ai.model.doGenerateCalls[0].responseFormat as { schema?: unknown };
+    expect(optionalKeys(format.schema)).toEqual([]);
+  });
+
+  it("brief: a null date from the model is dropped, not shown", async () => {
+    const answer = { ...modelAnswer, recentWork: [{ title: "EIP Hub talk", url: "https://eiphub.example/talk", date: null }] };
+    const ai = mockJsonModel(answer);
+    const brief = await buildBrief(input, { search: vi.fn(async () => searchResults), fetchPages: vi.fn(async () => ({ pages, failed: [] })), model: ai.model });
+    expect(brief.recentWork).toEqual([{ title: "EIP Hub talk", url: "https://eiphub.example/talk" }]);
   });
 });
