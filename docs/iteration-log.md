@@ -58,3 +58,4 @@ What we tested, what it taught us, and what we changed. Times are IST.
 - [ ] A real brief and draft with the xAI key
 - [ ] 2–3 real guests invited, and at least one answer
 - Telegram OIDC id_token: docs show `id` as a number, but real tokens send it as a string of digits. Found from production logs (claim names/types only), fixed with a test.
+- World ID: World App rejected the request with "Feature unavailable: enable Selfie Check for your app" because Selfie Check (beta) needs World to enable it per app. Dropped it from the accepted credentials (Orb or passport remain).

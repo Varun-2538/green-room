@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui";
 
-// Accept any World ID credential a real person may hold; uniqueness comes from the nullifier.
+// Orb (proof of human) or passport; uniqueness comes from the nullifier. Selfie Check is left out:
+// it's a beta credential World must enable per app, and World App refuses the whole request without it.
 const constraints = any(
   CredentialRequest("proof_of_human"),
   CredentialRequest("passport"),
-  CredentialRequest("selfie"),
 );
 
 export function VerifyWithWorld({ appId, rpId, action, next }: { appId: `app_${string}`; rpId: string; action: string; next: string }) {
