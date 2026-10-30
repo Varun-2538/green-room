@@ -16,7 +16,7 @@
   "dependencies": {
     "@ai-sdk/react": "^4.0.161",
     "@ai-sdk/xai": "^5.0.33",
-    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@modelcontextprotocol/server": "^2.4.0",
     "@neondatabase/serverless": "^1.2.0",
     "@worldcoin/idkit": "^4.6.0",
     "@worldcoin/idkit-core": "^4.6.0",

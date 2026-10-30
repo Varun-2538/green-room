@@ -1,0 +1,107 @@
+{
+  "manifest": 2,
+  "id": "green-room",
+  "name": "Green Room",
+  "version": "1.0.0",
+  "description": "A booking desk for creators. Researches a possible guest from their public name and links and returns their story, sourced facts and interview questions.",
+  "homepage": "https://green-room-edgecity.vercel.app/",
+  "visibility": "sandbox",
+  "permissions": [
+    {
+      "kind": "read",
+      "label": "Research a guest",
+      "description": "Read public web pages about a person you name, from public links you give. No accounts, profiles, messages or purchases."
+    }
+  ],
+  "service": {
+    "kind": "mcp",
+    "baseUrl": "https://green-room-edgecity.vercel.app/api/mcp",
+    "auth": {
+      "mode": "none"
+    }
+  },
+  "operations": [
+    {
+      "name": "green-room.read",
+      "class": "read",
+      "target": {
+        "tool": "guest_brief"
+      },
+      "input": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "links": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "pattern": "^https://",
+              "maxLength": 500
+            }
+          },
+          "topic": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "name",
+          "links",
+          "topic"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "green-room.questions",
+      "class": "read",
+      "target": {
+        "tool": "episode_questions"
+      },
+      "input": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "links": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "pattern": "^https://",
+              "maxLength": 500
+            }
+          },
+          "topic": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "name",
+          "links",
+          "topic"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "skills": [
+    {
+      "name": "green-room",
+      "version": "1.0.0",
+      "sha256": "59478ef9f34e5b222aea6a384bc41a26a8d56ca897e51cd24c717206985b0cd7",
+      "path": "skills/green-room/SKILL.md"
+    }
+  ]
+}
