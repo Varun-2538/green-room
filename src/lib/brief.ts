@@ -46,7 +46,7 @@ const briefSchema = z.object({
 const SYSTEM = `You write guest briefs for a podcast host.
 Use ONLY the sources provided. Every fact must cite the exact URL of the source it came from, copied from the sources list.
 If the sources don't say something, leave it out. Never guess, never invent dates, titles or numbers.
-Write in plain, warm English. The story is 3-5 sentences about the person's path so far: where they started, what changed, where they are now.
+Write in plain, warm English. The story is 3-5 sentences about the person's path so far: where they started, what changed, where they are now. Keep URLs and citation marks out of the story; sources belong in the facts.
 Write ${QUESTION_COUNT} interview questions about the person's journey: turning points, doubts, what they learned, not just their milestones.`;
 
 /** The handle in their first social link (e.g. x.com/0xYudhishthra) disambiguates common names in search. */
