@@ -48,7 +48,7 @@ export function InviteHistory({
                   by {invite.answeredByName}
                   {invite.answeredByUsername ? (
                     <a href={`https://t.me/${invite.answeredByUsername}`} target="_blank" rel="noreferrer" className="ml-1 text-brand underline">
-                      @{invite.answeredByUsername}
+                      {`@${invite.answeredByUsername}`}
                     </a>
                   ) : null}
                 </span>
