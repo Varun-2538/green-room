@@ -14,10 +14,11 @@ export type DeskToolContext = {
   model: LanguageModel;
   search: typeof tinyfishSearch;
   fetchPages: typeof tinyfishFetch;
+  /** Set on a guest page: tools default to this guest, so the model never has to supply an id. */
+  guestId?: string;
 };
 
 const NOT_FOUND = { error: "not_found" } as const;
-const guestId = z.uuid().describe("The guest's id from list_pipeline");
 
 /**
  * The desk assistant's tools. Every tool is scoped to the signed-in creator, and none of them
@@ -25,6 +26,11 @@ const guestId = z.uuid().describe("The guest's id from list_pipeline");
  */
 export function deskTools(ctx: DeskToolContext) {
   const { db, creator } = ctx;
+  // On a guest page the id is known; models sometimes invent placeholder ids, which strict tool validation rejects.
+  const guestId = ctx.guestId
+    ? z.uuid().optional().describe("Leave out: this conversation is about one guest already")
+    : z.uuid().describe("The guest's id from list_pipeline");
+  const target = (id?: string) => id ?? ctx.guestId ?? "";
   const showName = creator.showName ?? "my show";
 
   async function briefFor(id: string): Promise<Brief | null> {
@@ -58,7 +64,7 @@ export function deskTools(ctx: DeskToolContext) {
     get_brief: tool({
       description: "Get a guest's research brief (story, sourced facts, recent work, questions). Builds one with web research if missing.",
       inputSchema: z.object({ guestId }),
-      execute: async (input) => (await briefFor(input.guestId)) ?? NOT_FOUND,
+      execute: async (input) => (await briefFor(target(input.guestId))) ?? NOT_FOUND,
     }),
 
     draft_invite: tool({
@@ -69,7 +75,7 @@ export function deskTools(ctx: DeskToolContext) {
         note: z.string().max(500).optional().describe("Something the creator wants mentioned"),
       }),
       execute: async (input) => {
-        const guest = await getGuest(db, creator.id, input.guestId);
+        const guest = await getGuest(db, creator.id, target(input.guestId));
         if (!guest) return NOT_FOUND;
         const draft = await draftInvite(
           {
@@ -94,7 +100,7 @@ export function deskTools(ctx: DeskToolContext) {
       inputSchema: z.object({ guestId, event: z.literal("marked_recorded") }),
       execute: async (input) => {
         if (input.event !== "marked_recorded") return { error: "invalid_event" } as const;
-        const guest = await getGuest(db, creator.id, input.guestId);
+        const guest = await getGuest(db, creator.id, target(input.guestId));
         if (!guest) return NOT_FOUND;
         const updated = await setGuestStatus(db, creator.id, guest.id, "marked_recorded");
         return { status: updated.status };

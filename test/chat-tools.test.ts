@@ -70,3 +70,24 @@ describe("deskTools", () => {
     expect(await tools.invites_left.execute!({}, opts)).toEqual({ left: 5, limit: 5 });
   });
 });
+
+describe("deskTools scoped to one guest (the guest page chat)", () => {
+  it("uses the page's guest when the model leaves guestId out", async () => {
+    const { db, guest, ctx } = await setup();
+    await saveBrief(db, guest.id, { story: "scoped", recentWork: [], questions: [], facts: [], limited: false, sources: [] });
+    const tools = deskTools({ ...ctx, guestId: guest.id });
+    expect(await tools.get_brief.execute!({} as never, opts)).toMatchObject({ story: "scoped" });
+  });
+
+  it("still refuses another creator's guest even when scoped", async () => {
+    const { ctx } = await setup();
+    const tools = deskTools({ ...ctx, guestId: OTHER_GUEST });
+    expect(await tools.get_brief.execute!({} as never, opts)).toEqual({ error: "not_found" });
+  });
+
+  it("tells the model the guest id is optional on a guest page", async () => {
+    const { guest, ctx } = await setup();
+    const schema = deskTools({ ...ctx, guestId: guest.id }).get_brief.inputSchema as unknown as { safeParse: (v: unknown) => { success: boolean } };
+    expect(schema.safeParse({}).success).toBe(true);
+  });
+});

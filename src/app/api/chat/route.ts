@@ -30,7 +30,7 @@ Help the host find the right angle, prepare for guests and draft invites.
 Use your tools for every fact about the pipeline or a guest. Never invent facts about a guest; when you state one, cite the brief's source.
 You cannot create or send invites, or message anyone: the host creates a verified invite with their own click in the invite builder, and sends it in Telegram.
 Never ask for or repeat anything from the host's Mosaic pair pages.
-Keep replies short and plain.${guestName ? `\nThis conversation is about the guest ${guestName}; use their id from list_pipeline.` : ""}`;
+Keep replies short and plain.${guestName ? `\nThis conversation is about the guest ${guestName}. The tools already know who that is: leave guestId out.` : ""}`;
 }
 
 export async function POST(request: Request) {
@@ -50,7 +50,14 @@ export async function POST(request: Request) {
   if (!limit.allowed) return NextResponse.json({ error: "Chat limit reached for this hour." }, { status: 429 });
 
   const model = getModel();
-  const tools = deskTools({ db, creator, model, search: tinyfishSearch, fetchPages: tinyfishFetch });
+  const tools = deskTools({
+    db,
+    creator,
+    model,
+    search: tinyfishSearch,
+    fetchPages: tinyfishFetch,
+    ...(guest ? { guestId: guest.id } : {}),
+  });
   const result = streamText({
     model,
     instructions: instructions(creator.showName ?? "my show", guest?.name),
