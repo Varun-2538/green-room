@@ -7,6 +7,7 @@ import { checkRateLimit } from "@/lib/ratelimit";
 const body = z.object({
   answer: z.enum(["accepted", "time_suggested", "declined"]),
   note: z.string().max(2000).optional(),
+  slot: z.number().int().min(0).max(10).optional(),
 });
 
 export async function POST(request: Request, ctx: RouteContext<"/api/i/[code]/answer">) {
@@ -22,5 +23,5 @@ export async function POST(request: Request, ctx: RouteContext<"/api/i/[code]/an
 
   const card = await recordAnswer(db, code, parsed.data);
   if (!card) return NextResponse.json({ error: "Unknown invite." }, { status: 404 });
-  return NextResponse.json({ answer: card.answer, answerNote: card.answerNote ?? null });
+  return NextResponse.json({ answer: card.answer, answerNote: card.answerNote ?? null, chosenSlot: card.chosenSlot });
 }

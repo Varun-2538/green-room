@@ -23,7 +23,7 @@ const draft = (guestId: string) => ({
   guestId,
   message: "Hi Arun, would you come on In Between?",
   angle: "Dreams and the road to them",
-  timeOptions: ["Sat 11:00", "Sun 16:00"],
+  timeOptions: [{ start: "2026-10-31T11:00", place: "Terrace, Circle CoWork" }, { start: "2026-11-01T16:00" }],
 });
 
 describe("createInvite", () => {
@@ -63,15 +63,31 @@ describe("createInvite", () => {
     expect(await invitesLeftToday(db, creator.id, justAfterMidnightIst)).toBe(4);
   });
 
-  it("keeps at most 3 time options of at most 80 characters", async () => {
+  it("stores time slots as UTC instants read from India time, with an optional place", async () => {
     const { db, creator, guest } = await setup();
-    const result = await createInvite(
-      db,
-      creator.id,
-      { ...draft(guest.id), timeOptions: ["a", "b", "c", "d", "x".repeat(100)] },
-      NOON_IST,
-    );
-    expect(result.ok && result.invite.timeOptions).toEqual(["a", "b", "c"]);
+    const result = await createInvite(db, creator.id, draft(guest.id), NOON_IST);
+    expect(result.ok && result.invite.timeOptions).toEqual([
+      { start: "2026-10-31T05:30:00.000Z", place: "Terrace, Circle CoWork" },
+      { start: "2026-11-01T10:30:00.000Z" },
+    ]);
+  });
+
+  it("keeps at most 3 valid slots, drops unreadable times, and caps the place at 80 characters", async () => {
+    const { db, creator, guest } = await setup();
+    const slots = [
+      { start: "not a time" },
+      { start: "2026-10-31T09:00", place: "x".repeat(100) },
+      { start: "2026-10-31T10:00" },
+      { start: "2026-10-31T11:00" },
+      { start: "2026-10-31T12:00" },
+    ];
+    const result = await createInvite(db, creator.id, { ...draft(guest.id), timeOptions: slots }, NOON_IST);
+    expect(result.ok && result.invite.timeOptions.map((s) => s.start)).toEqual([
+      "2026-10-31T03:30:00.000Z",
+      "2026-10-31T04:30:00.000Z",
+      "2026-10-31T05:30:00.000Z",
+    ]);
+    expect(result.ok && result.invite.timeOptions[0].place).toHaveLength(80);
   });
 
   it("refuses to invite another creator's guest", async () => {
@@ -120,7 +136,8 @@ describe("guest invite card", () => {
       guestName: "Arun",
       verified: true,
       message: "Hi Arun, would you come on In Between?",
-      timeOptions: ["Sat 11:00", "Sun 16:00"],
+      timeOptions: [{ start: "2026-10-31T05:30:00.000Z", place: "Terrace, Circle CoWork" }, { start: "2026-11-01T10:30:00.000Z" }],
+      chosenSlot: null,
     });
   });
 
@@ -147,6 +164,18 @@ describe("guest invite card", () => {
     await recordAnswer(db, code, { answer: "declined", note: "Travelling, sorry" });
     expect(await status(db, guest.id)).toBe("declined");
     expect(await getInviteByCode(db, code)).toMatchObject({ answer: "declined", answerNote: "Travelling, sorry" });
+  });
+
+  it("records which time slot the guest picked when they say yes", async () => {
+    const { db, code } = await invited();
+    expect((await recordAnswer(db, code, { answer: "accepted", slot: 1 }))?.chosenSlot).toBe(1);
+  });
+
+  it("ignores a slot that doesn't exist, and clears the slot when the guest declines", async () => {
+    const { db, code } = await invited();
+    expect((await recordAnswer(db, code, { answer: "accepted", slot: 7 }))?.chosenSlot).toBeNull();
+    await recordAnswer(db, code, { answer: "accepted", slot: 0 });
+    expect((await recordAnswer(db, code, { answer: "declined" }))?.chosenSlot).toBeNull();
   });
 
   it("limits the answer note to 500 characters", async () => {

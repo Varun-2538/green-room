@@ -25,7 +25,7 @@ const body = z.discriminatedUnion("action", [
     guestId: z.uuid(),
     message: z.string().min(1).max(2000),
     angle: z.string().max(400),
-    timeOptions: z.array(z.string().max(200)).max(10),
+    timeOptions: z.array(z.object({ start: z.string().max(40), place: z.string().max(200).optional() })).max(10),
   }),
 ]);
 

@@ -70,6 +70,8 @@ export const guests = pgTable("guests", {
 
 export type RecentWork = { title: string; url: string; date?: string };
 export type SourcedFact = { text: string; sourceUrl: string };
+/** A proposed recording time: a UTC instant (ISO 8601) and an optional place. */
+export type TimeSlot = { start: string; place?: string };
 
 export const briefs = pgTable("briefs", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -96,7 +98,9 @@ export const invites = pgTable("invites", {
   code: varchar("code", { length: 12 }).notNull().unique(),
   message: text("message").notNull(),
   angle: text("angle").notNull(),
-  timeOptions: jsonb("time_options").$type<string[]>().notNull(),
+  timeOptions: jsonb("time_options").$type<TimeSlot[]>().notNull(),
+  /** Index into timeOptions of the slot the guest picked when saying yes. */
+  chosenSlot: integer("chosen_slot"),
   createdAt: createdAt(),
   openedAt: timestamp("opened_at", { withTimezone: true }),
   answer: inviteAnswer("answer"),

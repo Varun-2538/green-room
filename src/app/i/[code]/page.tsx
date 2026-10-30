@@ -6,6 +6,7 @@ import { Badge, Card } from "@/components/ui";
 import { currentCreator } from "@/lib/auth/session";
 import { isLinkPreviewBot } from "@/lib/bots";
 import { getDb } from "@/lib/db/client";
+import { env } from "@/lib/env";
 import { inviteMetadata } from "@/lib/invite-metadata";
 import { getInviteByCode, markOpened } from "@/lib/invites";
 
@@ -61,18 +62,17 @@ export default async function InvitePage(props: PageProps<"/i/[code]">) {
           </p>
         ) : null}
 
-        {card.timeOptions.length > 0 ? (
-          <div>
-            <p className="mb-1 text-sm font-medium">Possible times</p>
-            <ul className="flex flex-wrap gap-2 text-sm">
-              {card.timeOptions.map((t) => (
-                <li key={t} className="rounded-full border border-line px-3 py-1">{t}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        <AnswerButtons code={card.code} creatorName={card.creatorName} initialAnswer={card.answer} />
+        <AnswerButtons
+          code={card.code}
+          appUrl={env.NEXT_PUBLIC_APP_URL}
+          showName={card.showName}
+          creatorName={card.creatorName}
+          guestName={card.guestName}
+          angle={card.angle}
+          timeOptions={card.timeOptions}
+          initialAnswer={card.answer}
+          initialSlot={card.chosenSlot}
+        />
       </Card>
       <p className="text-center text-xs text-muted">
         Sent with Green Room · {card.verified ? "World ID confirms the sender is a real, unique person." : "This sender hasn't verified yet."}

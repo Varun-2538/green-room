@@ -21,7 +21,7 @@ export function InviteBuilder({ guestId, guestName, verified, invitesLeft, daily
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [angle, setAngle] = useState("");
-  const [times, setTimes] = useState(["", "", ""]);
+  const [times, setTimes] = useState([0, 1, 2].map(() => ({ start: "", place: "" })));
   const [url, setUrl] = useState<string | null>(null);
   const [left, setLeft] = useState(invitesLeft);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +58,8 @@ export function InviteBuilder({ guestId, guestName, verified, invitesLeft, daily
     setBusy("create");
     setError(null);
     try {
-      const r = (await post({ action: "create", message, angle, timeOptions: times.filter(Boolean) })) as { url: string };
+      const timeOptions = times.filter((t) => t.start).map((t) => ({ start: t.start, ...(t.place.trim() ? { place: t.place.trim() } : {}) }));
+      const r = (await post({ action: "create", message, angle, timeOptions })) as { url: string };
       setUrl(r.url);
       setLeft((n) => Math.max(0, n - 1));
       router.refresh();
@@ -106,17 +107,27 @@ export function InviteBuilder({ guestId, guestName, verified, invitesLeft, daily
             <input value={angle} onChange={(e) => setAngle(e.target.value)} maxLength={200} className={inputClass} />
           </label>
           <div className="space-y-1">
-            <span className="text-sm font-medium">Time options (up to 3)</span>
+            <span className="text-sm font-medium">Times to offer (India time, up to 3)</span>
+            <p className="text-xs text-muted">The guest picks one and can add it to their calendar.</p>
             <div className="grid gap-2 sm:grid-cols-3">
               {times.map((t, i) => (
-                <input
-                  key={i}
-                  value={t}
-                  maxLength={80}
-                  onChange={(e) => setTimes((all) => all.map((v, j) => (j === i ? e.target.value : v)))}
-                  placeholder={["Sat 11:00 at the terrace", "Sun 16:00", "Any evening this week"][i]}
-                  className={inputClass}
-                />
+                <div key={i} className="space-y-1">
+                  <input
+                    type="datetime-local"
+                    value={t.start}
+                    onChange={(e) => setTimes((all) => all.map((v, j) => (j === i ? { ...v, start: e.target.value } : v)))}
+                    className={inputClass}
+                    aria-label={`Time option ${i + 1}`}
+                  />
+                  <input
+                    value={t.place}
+                    maxLength={80}
+                    onChange={(e) => setTimes((all) => all.map((v, j) => (j === i ? { ...v, place: e.target.value } : v)))}
+                    placeholder={["Terrace, Circle CoWork", "Online", "Place (optional)"][i]}
+                    className={inputClass}
+                    aria-label={`Place for time option ${i + 1}`}
+                  />
+                </div>
               ))}
             </div>
           </div>

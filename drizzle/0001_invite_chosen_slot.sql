@@ -1,0 +1,1 @@
+ALTER TABLE "invites" ADD COLUMN "chosen_slot" integer;

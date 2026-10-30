@@ -1,7 +1,8 @@
 import { and, count, desc, eq, gte, isNull } from "drizzle-orm";
 import { customAlphabet } from "nanoid";
 import type { Db } from "@/lib/db/client";
-import { creators, guests, type Invite, type InviteAnswer, invites } from "@/lib/db/schema";
+import { parseIstLocal } from "@/lib/calendar";
+import { creators, guests, type Invite, type InviteAnswer, invites, type TimeSlot } from "@/lib/db/schema";
 import { getGuest, NotFoundError, setGuestStatus } from "@/lib/guests";
 import type { PipelineEvent } from "@/lib/pipeline";
 import { istDayStart, nextIstMidnight } from "@/lib/time";
@@ -12,9 +13,11 @@ const newCode = customAlphabet(CODE_ALPHABET, 12);
 const MAX_MESSAGE = 1200;
 const MAX_ANGLE = 200;
 const MAX_TIME_OPTIONS = 3;
-const MAX_TIME_OPTION = 80;
+const MAX_PLACE = 80;
 
-export type NewInvite = { guestId: string; message: string; angle: string; timeOptions: string[] };
+/** A slot as the creator typed it: a datetime-local value in India time, and an optional place. */
+export type SlotInput = { start: string; place?: string };
+export type NewInvite = { guestId: string; message: string; angle: string; timeOptions: SlotInput[] };
 export type CreateInviteResult =
   | { ok: true; invite: Invite }
   | { ok: false; reason: "not_verified" }
@@ -40,7 +43,14 @@ export async function createInvite(db: Db, creatorId: string, i: NewInvite, now:
   const message = i.message.trim().slice(0, MAX_MESSAGE);
   if (!message) throw new Error("Invite message is empty");
   const angle = i.angle.trim().slice(0, MAX_ANGLE);
-  const timeOptions = i.timeOptions.map((t) => t.trim()).filter((t) => t && t.length <= MAX_TIME_OPTION).slice(0, MAX_TIME_OPTIONS);
+  const timeOptions = i.timeOptions
+    .flatMap((slot): TimeSlot[] => {
+      const start = parseIstLocal(slot.start.trim());
+      if (!start) return [];
+      const place = slot.place?.trim().slice(0, MAX_PLACE);
+      return [{ start: start.toISOString(), ...(place ? { place } : {}) }];
+    })
+    .slice(0, MAX_TIME_OPTIONS);
 
   const guest = await getGuest(db, creatorId, i.guestId);
   if (!guest) throw new NotFoundError("Guest");
@@ -81,7 +91,8 @@ export type InviteCard = {
   code: string;
   message: string;
   angle: string;
-  timeOptions: string[];
+  timeOptions: TimeSlot[];
+  chosenSlot: number | null;
   showName: string;
   showPitch?: string;
   creatorName: string;
@@ -122,6 +133,7 @@ export async function getInviteByCode(db: Db, code: string): Promise<InviteCard 
     message: invite.message,
     angle: invite.angle,
     timeOptions: invite.timeOptions,
+    chosenSlot: invite.chosenSlot,
     showName: creator.showName ?? `${creator.name}'s show`,
     ...(creator.showPitch ? { showPitch: creator.showPitch } : {}),
     creatorName: creator.name,
@@ -145,12 +157,19 @@ export async function markOpened(db: Db, code: string, viewerCreatorId: string |
 export async function recordAnswer(
   db: Db,
   code: string,
-  a: { answer: InviteAnswer; note?: string },
+  a: { answer: InviteAnswer; note?: string; slot?: number },
 ): Promise<InviteCard | null> {
   const row = await findInvite(db, code);
   if (!row) return null;
   const note = a.note?.trim().slice(0, MAX_ANSWER_NOTE) || null;
-  await db.update(invites).set({ answer: a.answer, answerNote: note, answeredAt: new Date() }).where(eq(invites.id, row.invite.id));
+  // A slot only counts for a yes, and only if it is one the creator offered.
+  const slot = a.slot;
+  const chosenSlot =
+    a.answer === "accepted" && Number.isInteger(slot) && slot !== undefined && slot >= 0 && slot < row.invite.timeOptions.length ? slot : null;
+  await db
+    .update(invites)
+    .set({ answer: a.answer, answerNote: note, answeredAt: new Date(), chosenSlot })
+    .where(eq(invites.id, row.invite.id));
   await setGuestStatus(db, row.invite.creatorId, row.invite.guestId, ANSWER_EVENT[a.answer]);
   return getInviteByCode(db, code);
 }

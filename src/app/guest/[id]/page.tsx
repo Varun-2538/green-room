@@ -56,7 +56,13 @@ export default async function GuestPage(props: PageProps<"/guest/[id]">) {
             invitesLeft={invitesLeft}
             dailyLimit={DAILY_INVITE_LIMIT}
           />
-          <InviteHistory invites={invites} appUrl={env.NEXT_PUBLIC_APP_URL} />
+          <InviteHistory
+            invites={invites}
+            appUrl={env.NEXT_PUBLIC_APP_URL}
+            showName={creator.showName ?? `${creator.name}'s show`}
+            creatorName={creator.name}
+            guestName={guest.name}
+          />
         </Card>
 
         <Card className="space-y-3 lg:row-start-1">
