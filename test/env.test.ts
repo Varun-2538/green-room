@@ -4,8 +4,8 @@ import { loadEnv } from "@/lib/env";
 const valid = {
   DATABASE_URL: "postgres://user:pass@localhost:5432/db",
   SESSION_SECRET: "x".repeat(32),
-  TELEGRAM_LOGIN_BOT_TOKEN: "123:abc",
-  NEXT_PUBLIC_TELEGRAM_LOGIN_BOT: "green_room_login_bot",
+  TELEGRAM_CLIENT_ID: "9290244481",
+  TELEGRAM_CLIENT_SECRET: "tg-secret",
   NEXT_PUBLIC_WORLD_APP_ID: "app_test",
   NEXT_PUBLIC_WORLD_RP_ID: "rp_test",
   RP_SIGNING_KEY: "deadbeef",
@@ -37,5 +37,11 @@ describe("loadEnv", () => {
     const rest: Record<string, string> = { ...valid };
     delete rest.GROQ_API_KEY;
     expect(() => loadEnv(rest)).toThrow(/GROQ_API_KEY/);
+  });
+
+  it("requires the Telegram Login client secret, naming the key", () => {
+    const rest: Record<string, string> = { ...valid };
+    delete rest.TELEGRAM_CLIENT_SECRET;
+    expect(() => loadEnv(rest)).toThrow(/TELEGRAM_CLIENT_SECRET/);
   });
 });

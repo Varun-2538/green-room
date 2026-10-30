@@ -3,8 +3,8 @@ import { z } from "zod";
 const envSchema = z.object({
   DATABASE_URL: z.url(),
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters"),
-  TELEGRAM_LOGIN_BOT_TOKEN: z.string().min(1),
-  NEXT_PUBLIC_TELEGRAM_LOGIN_BOT: z.string().min(1),
+  TELEGRAM_CLIENT_ID: z.string().regex(/^[0-9]+$/, "TELEGRAM_CLIENT_ID is the numeric Client ID from @BotFather"),
+  TELEGRAM_CLIENT_SECRET: z.string().min(1),
   NEXT_PUBLIC_WORLD_APP_ID: z.string().min(1),
   NEXT_PUBLIC_WORLD_RP_ID: z.string().min(1),
   RP_SIGNING_KEY: z.string().min(1),

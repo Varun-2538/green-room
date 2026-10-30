@@ -1,10 +1,8 @@
 import { redirect } from "next/navigation";
-import { TelegramLogin } from "@/components/TelegramLogin";
 import { Card } from "@/components/ui";
 import { safeNextPath } from "@/lib/auth/redirect";
 import { currentCreator } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
-import { env } from "@/lib/env";
 
 const steps = [
   ["Find", "Your Agent Village agent picks guests from your Mosaic circle, by episode topic."],
@@ -18,7 +16,7 @@ export default async function Landing(props: PageProps<"/">) {
   const next = safeNextPath(typeof search.next === "string" ? search.next : null, "/desk");
   if (await currentCreator(getDb())) redirect(next);
 
-  const authUrl = `${env.NEXT_PUBLIC_APP_URL}/api/auth/telegram?next=${encodeURIComponent(next)}`;
+  const loginHref = `/api/auth/telegram/start?next=${encodeURIComponent(next)}`;
 
   return (
     <div className="grid gap-10 py-6 md:grid-cols-[1.2fr_1fr] md:items-center">
@@ -34,7 +32,15 @@ export default async function Landing(props: PageProps<"/">) {
           and invite them like a real person, not a bot.
         </p>
         <div className="mt-8">
-          <TelegramLogin bot={env.NEXT_PUBLIC_TELEGRAM_LOGIN_BOT} authUrl={authUrl} />
+          <a
+            href={loginHref}
+            className="inline-flex items-center gap-2 rounded-full bg-[#2AABEE] px-5 py-3 font-medium text-white shadow-sm hover:bg-[#229ED9]"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current">
+              <path d="M9.04 15.47 8.9 19.5c.4 0 .58-.17.79-.38l1.9-1.82 3.94 2.88c.72.4 1.24.19 1.43-.67l2.59-12.13c.26-1.07-.4-1.49-1.1-1.23L3.24 9.94c-1.04.4-1.03.98-.18 1.24l3.9 1.22 9.06-5.71c.43-.26.82-.12.5.17" />
+            </svg>
+            Log in with Telegram
+          </a>
           {search.error === "login" ? (
             <p className="mt-2 text-sm text-bad">That Telegram login could not be checked. Please try again.</p>
           ) : null}

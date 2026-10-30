@@ -28,7 +28,7 @@ npm run build
 
 | Piece | Where |
 |---|---|
-| Telegram login, sessions | `src/lib/auth/`, `src/app/api/auth/` |
+| Telegram Login (OpenID Connect + PKCE), sessions | `src/lib/auth/`, `src/app/api/auth/` |
 | World ID (one human, one account) | `src/lib/worldid/verify.ts`, `src/app/verify/` |
 | Agent handoff ("Add to desk" link, public fields only) | `src/lib/handoff.ts`, `src/app/add/` |
 | Guest research (TinyFish search + fetch, sourced facts) | `src/lib/tinyfish.ts`, `src/lib/brief.ts` |
@@ -45,7 +45,7 @@ Nothing from a Mosaic pair page leaves the creator's Telegram chat. The desk onl
 
 1. `vercel login`, `vercel link`, add the env vars from `.env.example` (`vercel env add`), `vercel deploy --prod`.
 2. Set `NEXT_PUBLIC_APP_URL` to the production URL and redeploy.
-3. In @BotFather: `/setdomain` for the login bot → the production domain.
+3. In the @BotFather mini app: your bot → **Login Widget** → Allowed URLs: the production origin and `<origin>/api/auth/telegram/callback`. Copy the Client ID and Client Secret into `TELEGRAM_CLIENT_ID` / `TELEGRAM_CLIENT_SECRET`.
 4. `npm run db:migrate` with the Neon `DATABASE_URL`.
 5. Update `mini-app/green-room/manifest.json` `baseUrl`/`homepage` to the production URL.
 
