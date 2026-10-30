@@ -73,9 +73,6 @@ export async function POST(request: Request) {
     timeOptions: input.timeOptions,
   });
   if (!result.ok) {
-    if (result.reason === "not_verified") {
-      return NextResponse.json({ error: "Verify with World ID first.", verify: true }, { status: 403 });
-    }
     return NextResponse.json(
       { error: `You've sent ${DAILY_INVITE_LIMIT} invites today. More at ${formatIstTime(result.resetsAt)} IST.` },
       { status: 429 },

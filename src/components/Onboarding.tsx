@@ -154,10 +154,10 @@ export function Onboarding(props: {
           <>
             <h1 className="font-display text-3xl font-semibold leading-tight text-brand sm:text-4xl">
               Prove you&apos;re a real person.
-              <span className="ml-2 align-middle text-sm font-normal text-muted">optional for now</span>
+              <span className="ml-2 align-middle text-sm font-normal text-muted">optional</span>
             </h1>
             <p className="-mt-3 text-muted">
-              World ID puts a verified badge on your invites and unlocks sending them, 5 a day. We never see your name or face.
+              World ID puts a verified badge on your invites, so guests know a real person is asking. You can send invites without it. We never see your name or face.
             </p>
             {verified ? (
               <p className="font-medium text-good">✓ Verified. Guests will see the badge.</p>

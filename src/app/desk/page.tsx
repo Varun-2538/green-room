@@ -42,7 +42,7 @@ export default async function DeskPage() {
         title={`${creator.showName} · booking desk`}
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
-            {creator.verifiedAt ? <Badge tone="good">✓ Verified human</Badge> : <Link href="/verify" className="text-brand underline">Verify with World ID to send invites</Link>}
+            {creator.verifiedAt ? <Badge tone="good">✓ Verified human</Badge> : <Link href="/verify" className="text-brand underline">Optional: verify with World ID for a verified badge</Link>}
             <span>
               {guests.length} guest{guests.length === 1 ? "" : "s"} · {booked} booked
             </span>

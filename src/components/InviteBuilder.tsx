@@ -158,18 +158,17 @@ export function InviteBuilder({ guestId, guestName, guestLinks, telegram, verifi
               ))}
             </div>
           </div>
-          {verified ? (
-            <div className="flex flex-wrap items-center gap-3">
-              <Button onClick={create} disabled={busy !== null || left === 0 || !message.trim()}>
-                {busy === "create" ? "Creating…" : "Create verified invite"}
-              </Button>
-              <span className="text-sm text-muted">{left} of {dailyLimit} invites left today</span>
-            </div>
-          ) : (
-            <Link href={`/verify?next=/guest/${guestId}`} className="text-sm font-medium text-brand underline">
-              Verify with World ID to create invites
-            </Link>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={create} disabled={busy !== null || left === 0 || !message.trim()}>
+              {busy === "create" ? "Creating…" : verified ? "Create verified invite" : "Create invite"}
+            </Button>
+            <span className="text-sm text-muted">{left} of {dailyLimit} invites left today</span>
+            {!verified ? (
+              <Link href={`/verify?next=/guest/${guestId}`} className="text-sm text-brand underline">
+                Optional: verify with World ID for a verified badge
+              </Link>
+            ) : null}
+          </div>
         </>
       ) : null}
 

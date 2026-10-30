@@ -18,8 +18,8 @@ export default async function VerifyPage(props: PageProps<"/verify">) {
       <PageTitle title="Prove you're a real person" subtitle="Guests see a verified badge on every invite you send." />
       <Card className="space-y-4">
         <p>
-          One verification per person. It proves you&apos;re a real human; we never see your name or face. It also
-          keeps the village free of invite spam: each verified person can send 5 invites a day.
+          Optional, and one verification per person. It proves you&apos;re a real, unique human; we never see your name or
+          face. Guests see the badge on your invites, so they know a real person is asking.
         </p>
         <Badge tone="good">✓ Verified human · World ID</Badge>
         <VerifyWithWorld

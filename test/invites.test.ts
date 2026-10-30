@@ -27,9 +27,11 @@ const draft = (guestId: string) => ({
 });
 
 describe("createInvite", () => {
-  it("refuses a creator who has not verified with World ID", async () => {
+  it("lets a creator who has not verified with World ID send invites too; the card just has no verified badge", async () => {
     const { db, creator, guest } = await setup({ verified: false });
-    expect(await createInvite(db, creator.id, draft(guest.id), NOON_IST)).toEqual({ ok: false, reason: "not_verified" });
+    const result = await createInvite(db, creator.id, draft(guest.id), NOON_IST);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect((await getInviteByCode(db, result.invite.code))?.verified).toBe(false);
   });
 
   it("creates an invite with a 12-character URL-safe code and marks the guest invited", async () => {

@@ -20,7 +20,6 @@ export type SlotInput = { start: string; place?: string };
 export type NewInvite = { guestId: string; message: string; angle: string; timeOptions: SlotInput[] };
 export type CreateInviteResult =
   | { ok: true; invite: Invite }
-  | { ok: false; reason: "not_verified" }
   | { ok: false; reason: "limit_reached"; resetsAt: Date };
 
 async function sentToday(db: Db, creatorId: string, now: Date): Promise<number> {
@@ -36,8 +35,8 @@ export async function invitesLeftToday(db: Db, creatorId: string, now: Date = ne
 }
 
 /**
- * Issues a verified invite link. One World ID is tied to one account (see linkNullifier),
- * so the per-account daily limit is a per-human limit.
+ * Issues an invite link. World ID is optional: a verified creator's card carries the verified badge, and since one
+ * World ID is tied to one account (see linkNullifier), their daily limit is a per-human limit.
  */
 export async function createInvite(db: Db, creatorId: string, i: NewInvite, now: Date = new Date()): Promise<CreateInviteResult> {
   const message = i.message.trim().slice(0, MAX_MESSAGE);
@@ -57,12 +56,8 @@ export async function createInvite(db: Db, creatorId: string, i: NewInvite, now:
 
   return db.transaction(async (tx) => {
     // Lock the creator row so two simultaneous clicks can't both pass the limit check.
-    const [creator] = await tx
-      .select({ verifiedAt: creators.verifiedAt })
-      .from(creators)
-      .where(eq(creators.id, creatorId))
-      .for("update");
-    if (!creator?.verifiedAt) return { ok: false, reason: "not_verified" } as const;
+    // World ID is optional: it adds the verified badge to the card, it doesn't gate sending.
+    await tx.select({ id: creators.id }).from(creators).where(eq(creators.id, creatorId)).for("update");
 
     if ((await sentToday(tx as unknown as Db, creatorId, now)) >= DAILY_INVITE_LIMIT) {
       return { ok: false, reason: "limit_reached", resetsAt: nextIstMidnight(now) } as const;
