@@ -39,6 +39,8 @@ export const creators = pgTable("creators", {
   showName: text("show_name"),
   showPitch: text("show_pitch"),
   agentUsername: text("agent_username").notNull().default(DEFAULT_AGENT_USERNAME),
+  /** Optional booking page (Calendly, Cal.com…). Offered to guests when an invite has no fixed times. */
+  schedulingUrl: text("scheduling_url"),
   /** World ID nullifier as a decimal string; one human per account. */
   nullifier: numeric("nullifier", { precision: 78, scale: 0 }).unique(),
   verifiedAt: timestamp("verified_at", { withTimezone: true }),

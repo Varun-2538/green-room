@@ -28,10 +28,12 @@ export function SettingsForm({
   showName,
   showPitch,
   agentUsername,
+  schedulingUrl,
 }: {
   showName: string;
   showPitch: string;
   agentUsername: string;
+  schedulingUrl: string;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(updateSettingsAction, {});
   return (
@@ -50,6 +52,20 @@ export function SettingsForm({
           placeholder="Conversations about people's journeys, not their milestones."
           className={inputClass}
         />
+      </label>
+      <label className="block space-y-1">
+        <span className="text-sm font-medium">Booking link (optional)</span>
+        <input
+          name="schedulingUrl"
+          type="url"
+          defaultValue={schedulingUrl}
+          maxLength={300}
+          placeholder="https://calendly.com/you/30min"
+          className={inputClass}
+        />
+        <span className="text-xs text-muted">
+          Calendly, Cal.com or any booking page. Guests who say yes to an invite without fixed times book a slot here.
+        </span>
       </label>
       <label className="block space-y-1">
         <span className="text-sm font-medium">Your Agent Village agent&apos;s Telegram username</span>

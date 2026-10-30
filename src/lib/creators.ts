@@ -29,6 +29,14 @@ const settingsSchema = z.object({
     .transform((s) => s.replace(/^@/, ""))
     .pipe(z.string().regex(/^[A-Za-z0-9_]{5,32}$/, "Agent username must be a Telegram username (5–32 letters, digits or _)"))
     .optional(),
+  // Empty clears it. Only https links: it becomes a button on the guest's invite card.
+  schedulingUrl: z
+    .string()
+    .trim()
+    .max(300, "Booking link is too long")
+    .refine((s) => s === "" || /^https:\/\/[^\s/]+\.[^\s/]+(\/\S*)?$/i.test(s), "Booking link must be an https link, like https://calendly.com/you/30min")
+    .transform((s) => s || null)
+    .optional(),
 });
 
 export type SettingsInput = z.input<typeof settingsSchema>;

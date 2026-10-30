@@ -104,6 +104,8 @@ export type InviteCard = {
   openedAt: Date | null;
   answer?: InviteAnswer;
   answerNote?: string;
+  /** The creator's booking page, offered when the invite has no fixed times to pick from. */
+  schedulingUrl?: string;
   /** Who claimed the invite by answering it. Shown to the creator only. */
   answeredBy?: Responder;
 };
@@ -148,6 +150,7 @@ export async function getInviteByCode(db: Db, code: string): Promise<InviteCard 
     openedAt: invite.openedAt,
     ...(invite.answer ? { answer: invite.answer } : {}),
     ...(invite.answerNote ? { answerNote: invite.answerNote } : {}),
+    ...(creator.schedulingUrl && invite.timeOptions.length === 0 ? { schedulingUrl: creator.schedulingUrl } : {}),
     ...(invite.answeredByTelegramId !== null
       ? {
           answeredBy: {

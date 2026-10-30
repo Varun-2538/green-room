@@ -36,3 +36,21 @@ describe("applyEvent", () => {
     expect(applyEvent(from, event)).toBe(from);
   });
 });
+
+describe("PIPELINE_LANES", () => {
+  it("puts every status in exactly one lane, in four lanes that fit on screen", async () => {
+    const { PIPELINE_LANES } = await import("@/lib/pipeline");
+    const { guestStatus } = await import("@/lib/db/schema");
+    expect(PIPELINE_LANES).toHaveLength(4);
+    const placed = PIPELINE_LANES.flatMap((lane) => lane.statuses);
+    expect([...placed].sort()).toEqual([...guestStatus.enumValues].sort());
+  });
+
+  it("shows guests who said yes in their own lane", async () => {
+    const { laneFor } = await import("@/lib/pipeline");
+    expect(laneFor("accepted").title).toBe("Said yes");
+    expect(laneFor("time_suggested").title).toBe("Said yes");
+    expect(laneFor("opened").title).toBe("Invited");
+    expect(laneFor("brief_ready").title).toBe("Preparing");
+  });
+});

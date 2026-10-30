@@ -54,13 +54,28 @@ export function applyEvent(status: GuestStatus, event: PipelineEvent): GuestStat
   }
 }
 
-export const PIPELINE_COLUMNS: { title: string; statuses: GuestStatus[] }[] = [
-  { title: "Shortlisted", statuses: ["shortlisted"] },
-  { title: "Brief ready", statuses: ["brief_ready"] },
-  { title: "Drafted", statuses: ["drafted"] },
-  { title: "Invited", statuses: ["invited"] },
-  { title: "Opened", statuses: ["opened"] },
+/** The desk board: four lanes that fit on one screen. Each card names its exact stage. */
+export const PIPELINE_LANES: { title: string; statuses: GuestStatus[] }[] = [
+  { title: "Preparing", statuses: ["shortlisted", "brief_ready", "drafted"] },
+  { title: "Invited", statuses: ["invited", "opened"] },
   { title: "Said yes", statuses: ["accepted", "time_suggested"] },
-  { title: "Declined", statuses: ["declined"] },
-  { title: "Recorded", statuses: ["recorded"] },
+  { title: "Done", statuses: ["recorded", "declined"] },
 ];
+
+export const STAGE_LABEL: Record<GuestStatus, string> = {
+  shortlisted: "Shortlisted",
+  brief_ready: "Brief ready",
+  drafted: "Invite drafted",
+  invited: "Not opened yet",
+  opened: "Opened",
+  accepted: "Booked",
+  time_suggested: "Suggested a time",
+  declined: "Declined",
+  recorded: "Recorded",
+};
+
+export function laneFor(status: GuestStatus) {
+  const lane = PIPELINE_LANES.find((l) => l.statuses.includes(status));
+  if (!lane) throw new Error(`No lane for ${status}`);
+  return lane;
+}

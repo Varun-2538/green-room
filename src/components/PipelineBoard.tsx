@@ -1,26 +1,31 @@
 import Link from "next/link";
 import { markRecordedAction } from "@/app/actions";
 import type { GuestWithEpisode } from "@/lib/guests";
-import { PIPELINE_COLUMNS } from "@/lib/pipeline";
+import { PIPELINE_LANES, STAGE_LABEL } from "@/lib/pipeline";
 
-const STATUS_LABEL: Record<string, string> = { time_suggested: "suggested a time", accepted: "said yes" };
+const STAGE_TONE: Partial<Record<GuestWithEpisode["status"], string>> = {
+  accepted: "text-good",
+  time_suggested: "text-warn",
+  declined: "text-bad",
+  recorded: "text-good",
+};
 
 export function PipelineBoard({ guests }: { guests: GuestWithEpisode[] }) {
   if (guests.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-line p-6 text-center text-muted">
-        No guests yet. Create an episode, then ask your agent for guests.
+        No guests yet. Open an episode, then ask your agent for guests.
       </p>
     );
   }
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2">
-      {PIPELINE_COLUMNS.map((column) => {
-        const cards = guests.filter((g) => column.statuses.includes(g.status));
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {PIPELINE_LANES.map((lane) => {
+        const cards = guests.filter((g) => lane.statuses.includes(g.status));
         return (
-          <div key={column.title} className="w-52 shrink-0 rounded-2xl bg-background/60 p-2">
+          <div key={lane.title} className="min-w-0 rounded-2xl bg-background/60 p-2">
             <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-              {column.title} · {cards.length}
+              {lane.title} · {cards.length}
             </p>
             <div className="space-y-2">
               {cards.map((g) => (
@@ -29,7 +34,7 @@ export function PipelineBoard({ guests }: { guests: GuestWithEpisode[] }) {
                     {g.name}
                   </Link>
                   <p className="mt-0.5 line-clamp-2 text-xs text-muted">{g.episodeTopic}</p>
-                  {STATUS_LABEL[g.status] ? <p className="mt-1 text-xs text-good">{STATUS_LABEL[g.status]}</p> : null}
+                  <p className={`mt-1 text-xs font-medium ${STAGE_TONE[g.status] ?? "text-muted"}`}>{STAGE_LABEL[g.status]}</p>
                   {g.status === "accepted" ? (
                     <form action={markRecordedAction} className="mt-2">
                       <input type="hidden" name="guestId" value={g.id} />
@@ -40,6 +45,7 @@ export function PipelineBoard({ guests }: { guests: GuestWithEpisode[] }) {
                   ) : null}
                 </div>
               ))}
+              {cards.length === 0 ? <p className="px-1 pb-1 text-xs text-muted/70">Nobody here yet</p> : null}
             </div>
           </div>
         );

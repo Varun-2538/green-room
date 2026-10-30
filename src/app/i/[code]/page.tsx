@@ -83,6 +83,7 @@ export default async function InvitePage(props: PageProps<"/i/[code]">) {
           loginHref={`/api/auth/telegram/start?next=${encodeURIComponent(`/i/${card.code}`)}`}
           initialAnswer={isClaimant ? card.answer : undefined}
           initialSlot={isClaimant ? card.chosenSlot : null}
+          schedulingUrl={card.schedulingUrl}
         />
       </Card>
       <p className="text-center text-xs text-muted">

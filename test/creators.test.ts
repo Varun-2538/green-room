@@ -36,3 +36,23 @@ describe("creators", () => {
     expect(updated.showPitch).toBe("Journeys, not milestones.");
   });
 });
+
+describe("booking link", () => {
+  const user = { id: 43, first_name: "Varun", auth_date: 1 };
+
+  it("saves an https booking link such as Calendly, and clears it when emptied", async () => {
+    const db = await makeTestDb();
+    const c = await upsertCreatorFromTelegram(db, user);
+    const saved = await updateSettings(db, c.id, { schedulingUrl: " https://calendly.com/itsvidhisingh/30min " });
+    expect(saved.schedulingUrl).toBe("https://calendly.com/itsvidhisingh/30min");
+    expect((await updateSettings(db, c.id, { schedulingUrl: "" })).schedulingUrl).toBeNull();
+  });
+
+  it("refuses anything that is not an https link", async () => {
+    const db = await makeTestDb();
+    const c = await upsertCreatorFromTelegram(db, user);
+    for (const bad of ["calendly.com/me", "http://calendly.com/me", "javascript:alert(1)"]) {
+      await expect(updateSettings(db, c.id, { schedulingUrl: bad })).rejects.toThrow(/booking link/i);
+    }
+  });
+});

@@ -31,6 +31,8 @@ type Props = {
   timeOptions: TimeSlot[];
   initialAnswer?: Answer;
   initialSlot: number | null;
+  /** The creator's booking page: offered after a yes when there are no fixed times. */
+  schedulingUrl?: string;
 };
 
 export function AnswerButtons(props: Props) {
@@ -103,7 +105,21 @@ export function AnswerButtons(props: Props) {
       <div className="space-y-3 text-center">
         <p className="font-display text-2xl text-brand">{THANKS[answer]}</p>
         {event ? <p className="font-medium">{formatSlotIst(event.start)}{event.location ? ` · ${event.location}` : ""}</p> : null}
-        <p className="text-muted">{creatorName} will see your answer.</p>
+        {answer === "accepted" && !event && props.schedulingUrl ? (
+          <>
+            <p className="text-muted">One last step: pick a slot on {creatorName}&apos;s calendar.</p>
+            <a
+              href={props.schedulingUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 font-medium text-white hover:bg-accent/90"
+            >
+              Pick a time on {creatorName}&apos;s calendar →
+            </a>
+          </>
+        ) : (
+          <p className="text-muted">{creatorName} will see your answer.</p>
+        )}
         {event ? <CalendarButtons event={{ ...event, start: event.start.toISOString() }} icsHref={`/api/i/${code}/calendar`} /> : null}
         <button onClick={() => setEditing(true)} className="text-sm text-muted underline">Change my answer</button>
       </div>
@@ -145,6 +161,9 @@ export function AnswerButtons(props: Props) {
         <Button variant="secondary" onClick={() => send("declined")} disabled={busy}>Not now</Button>
       </div>
       {needsSlot && slot === null ? <p className="text-center text-xs text-muted">Pick a time to say yes.</p> : null}
+      {!needsSlot && props.schedulingUrl ? (
+        <p className="text-center text-xs text-muted">Say yes and you&apos;ll pick a slot on {creatorName}&apos;s booking page.</p>
+      ) : null}
       {error ? <p className="text-center text-sm text-bad">{error}</p> : null}
     </div>
   );

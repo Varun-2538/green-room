@@ -13,6 +13,7 @@ export default async function SettingsPage() {
           showName={creator.showName ?? ""}
           showPitch={creator.showPitch ?? ""}
           agentUsername={creator.agentUsername}
+          schedulingUrl={creator.schedulingUrl ?? ""}
         />
       </Card>
     </div>

@@ -141,6 +141,17 @@ describe("guest invite card", () => {
     });
   });
 
+  it("offers the creator's booking link when the invite has no fixed times", async () => {
+    const ctx = await setup();
+    await ctx.db.update(creators).set({ schedulingUrl: "https://calendly.com/me/30min" }).where(eq(creators.id, ctx.creator.id));
+    const open = await createInvite(ctx.db, ctx.creator.id, { ...draft(ctx.guest.id), timeOptions: [] }, NOON_IST);
+    const fixed = await createInvite(ctx.db, ctx.creator.id, draft(ctx.guest.id), new Date(NOON_IST.getTime() + 1000));
+    if (!open.ok || !fixed.ok) throw new Error("setup failed");
+    expect((await getInviteByCode(ctx.db, open.invite.code))?.schedulingUrl).toBe("https://calendly.com/me/30min");
+    // Fixed times win: the guest picks one of those instead.
+    expect((await getInviteByCode(ctx.db, fixed.invite.code))?.schedulingUrl).toBeUndefined();
+  });
+
   it("does not count the creator opening their own link", async () => {
     const { db, creator, guest, code } = await invited();
     await markOpened(db, code, creator.id);

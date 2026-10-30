@@ -16,6 +16,7 @@ const when = (d: Date) =>
 /** What happened to each invite sent to this guest, including the guest's own note or suggested time. */
 export function InviteHistory({
   invites,
+  usesBookingLink,
   appUrl,
   showName,
   creatorName,
@@ -26,6 +27,7 @@ export function InviteHistory({
   showName: string;
   creatorName: string;
   guestName: string;
+  usesBookingLink: boolean;
 }) {
   if (invites.length === 0) return null;
   return (
@@ -65,6 +67,8 @@ export function InviteHistory({
                 </p>
                 <CalendarButtons event={{ ...event, start: event.start.toISOString() }} icsHref={`/api/i/${invite.code}/calendar`} />
               </div>
+            ) : invite.answer === "accepted" && usesBookingLink && invite.timeOptions.length === 0 ? (
+              <p className="text-muted">Sent to your booking link to pick a slot.</p>
             ) : null}
             {invite.answerNote ? (
               <p className="rounded-xl bg-background p-2">

@@ -8,6 +8,7 @@ import { getDb } from "@/lib/db/client";
 import { createEpisode } from "@/lib/episodes";
 import { addGuest, NotFoundError, setGuestStatus } from "@/lib/guests";
 import { ALLOWED_PARAMS, parseHandoff } from "@/lib/handoff";
+import { completeOnboarding, type OnboardingAnswers } from "@/lib/onboarding";
 
 export type FormState = { error?: string; ok?: boolean };
 
@@ -33,6 +34,7 @@ export async function updateSettingsAction(_prev: FormState, form: FormData): Pr
       showName: String(form.get("showName") ?? "") || undefined,
       showPitch: String(form.get("showPitch") ?? ""),
       agentUsername: String(form.get("agentUsername") ?? "") || undefined,
+      schedulingUrl: String(form.get("schedulingUrl") ?? ""),
     });
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Could not save settings." };
@@ -72,4 +74,21 @@ export async function addGuestAction(_prev: FormState, form: FormData): Promise<
   }
   revalidatePath("/desk");
   redirect(`/guest/${guestId}`);
+}
+
+export async function completeOnboardingAction(answers: OnboardingAnswers): Promise<FormState> {
+  const db = getDb();
+  const creator = await requireCreator(db);
+  try {
+    await completeOnboarding(db, creator.id, {
+      showName: String(answers.showName ?? ""),
+      showPitch: String(answers.showPitch ?? ""),
+      schedulingUrl: String(answers.schedulingUrl ?? ""),
+      topic: String(answers.topic ?? ""),
+    });
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not save your setup." };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true };
 }

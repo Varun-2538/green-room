@@ -12,7 +12,20 @@ const constraints = any(
   CredentialRequest("passport"),
 );
 
-export function VerifyWithWorld({ appId, rpId, action, next }: { appId: `app_${string}`; rpId: string; action: string; next: string }) {
+export function VerifyWithWorld({
+  appId,
+  rpId,
+  action,
+  next,
+  onVerified,
+}: {
+  appId: `app_${string}`;
+  rpId: string;
+  action: string;
+  next: string;
+  /** Called instead of navigating to `next`, for a caller that carries on in place (first-run setup). */
+  onVerified?: () => void;
+}) {
   const router = useRouter();
   const [rpContext, setRpContext] = useState<RpContext | null>(null);
   const [open, setOpen] = useState(false);
@@ -37,7 +50,7 @@ export function VerifyWithWorld({ appId, rpId, action, next }: { appId: `app_${s
 
   return (
     <div className="space-y-3">
-      <Button onClick={start} disabled={loading}>
+      <Button type="button" onClick={start} disabled={loading}>
         {loading ? "Starting…" : "Verify with World ID"}
       </Button>
       {error ? <p className="text-sm text-bad">{error}</p> : null}
@@ -62,7 +75,7 @@ export function VerifyWithWorld({ appId, rpId, action, next }: { appId: `app_${s
               throw new Error(body.error ?? "Verification failed");
             }
           }}
-          onSuccess={() => router.push(next)}
+          onSuccess={() => (onVerified ? onVerified() : router.push(next))}
           onError={(code) => setError(`World ID stopped: ${code.replaceAll("_", " ")}.`)}
         />
       ) : null}

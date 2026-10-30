@@ -13,15 +13,18 @@ type Props = {
   verified: boolean;
   invitesLeft: number;
   dailyLimit: number;
+  schedulingUrl: string | null;
 };
 
-export function InviteBuilder({ guestId, guestName, verified, invitesLeft, dailyLimit }: Props) {
+export function InviteBuilder({ guestId, guestName, verified, invitesLeft, dailyLimit, schedulingUrl }: Props) {
   const router = useRouter();
   const [tone, setTone] = useState<InviteTone>("warm");
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [angle, setAngle] = useState("");
   const [times, setTimes] = useState([0, 1, 2].map(() => ({ start: "", place: "" })));
+  // With a booking link the guest books there; otherwise (or by choice) they pick one of the times offered here.
+  const [useBookingLink, setUseBookingLink] = useState(Boolean(schedulingUrl));
   const [url, setUrl] = useState<string | null>(null);
   const [left, setLeft] = useState(invitesLeft);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +61,8 @@ export function InviteBuilder({ guestId, guestName, verified, invitesLeft, daily
     setBusy("create");
     setError(null);
     try {
-      const timeOptions = times.filter((t) => t.start).map((t) => ({ start: t.start, ...(t.place.trim() ? { place: t.place.trim() } : {}) }));
+      const timeOptions = (useBookingLink ? [] : times)
+        .filter((t) => t.start).map((t) => ({ start: t.start, ...(t.place.trim() ? { place: t.place.trim() } : {}) }));
       const r = (await post({ action: "create", message, angle, timeOptions })) as { url: string };
       setUrl(r.url);
       setLeft((n) => Math.max(0, n - 1));
@@ -106,7 +110,27 @@ export function InviteBuilder({ guestId, guestName, verified, invitesLeft, daily
             <span className="text-sm font-medium">Episode angle</span>
             <input value={angle} onChange={(e) => setAngle(e.target.value)} maxLength={200} className={inputClass} />
           </label>
-          <div className="space-y-1">
+          {schedulingUrl ? (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">How will {guestName} pick a time?</legend>
+              <div className="flex flex-wrap gap-2 text-sm">
+                {[
+                  { value: true, label: `My booking link (${new URL(schedulingUrl).host})` },
+                  { value: false, label: "Times I choose" },
+                ].map((option) => (
+                  <label
+                    key={option.label}
+                    className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 ${useBookingLink === option.value ? "border-brand bg-brand/5" : "border-line"}`}
+                  >
+                    <input type="radio" name="timeMode" checked={useBookingLink === option.value} onChange={() => setUseBookingLink(option.value)} />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+              {useBookingLink ? <p className="text-xs text-muted">After they say yes, the card sends them to your booking page.</p> : null}
+            </fieldset>
+          ) : null}
+          <div className={`space-y-1 ${useBookingLink ? "hidden" : ""}`}>
             <span className="text-sm font-medium">Times to offer (India time, up to 3)</span>
             <p className="text-xs text-muted">The guest picks one and can add it to their calendar.</p>
             <div className="grid gap-2 sm:grid-cols-3">

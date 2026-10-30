@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { DeskChat } from "@/components/DeskChat";
 import { NewEpisodeForm } from "@/components/forms";
+import { Onboarding } from "@/components/Onboarding";
 import { PipelineBoard } from "@/components/PipelineBoard";
 import { Badge, Card, PageTitle } from "@/components/ui";
 import { requireCreator } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { loadChat } from "@/lib/chat/history";
+import { env } from "@/lib/env";
 import { listEpisodes } from "@/lib/episodes";
 import { listAllGuests } from "@/lib/guests";
+import { needsOnboarding } from "@/lib/onboarding";
+import { WORLD_ACTION } from "@/lib/worldid/verify";
 
 export default async function DeskPage() {
   const db = getDb();
@@ -18,14 +22,30 @@ export default async function DeskPage() {
     loadChat(db, creator.id, null),
   ]);
 
+  // First visit: one question at a time. Once the show has a name, the desk takes its place.
+  if (needsOnboarding(creator)) {
+    return (
+      <Onboarding
+        firstName={creator.name.split(" ").find((w) => /\p{L}/u.test(w)) ?? creator.name}
+        verified={Boolean(creator.verifiedAt)}
+        episodeCount={episodes.length}
+        world={{ appId: env.NEXT_PUBLIC_WORLD_APP_ID as `app_${string}`, rpId: env.NEXT_PUBLIC_WORLD_RP_ID, action: WORLD_ACTION }}
+      />
+    );
+  }
+
+  const booked = guests.filter((g) => g.status === "accepted" || g.status === "recorded").length;
+
   return (
-    <div className="space-y-8">
+    <div className="rise-in space-y-8">
       <PageTitle
-        title={creator.showName ? `${creator.showName} · booking desk` : "Your booking desk"}
+        title={`${creator.showName} · booking desk`}
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
             {creator.verifiedAt ? <Badge tone="good">✓ Verified human</Badge> : <Link href="/verify" className="text-brand underline">Verify with World ID to send invites</Link>}
-            {!creator.showName ? <Link href="/settings" className="text-brand underline">Name your show</Link> : null}
+            <span>
+              {guests.length} guest{guests.length === 1 ? "" : "s"} · {booked} booked
+            </span>
           </span>
         }
       />
@@ -39,7 +59,9 @@ export default async function DeskPage() {
               <li key={e.id}>
                 <Link href={`/episode/${e.id}`} className="flex items-center justify-between py-3 hover:text-brand">
                   <span>{e.topic}</span>
-                  <span className="text-sm text-muted">{e.guestCount} guests</span>
+                  <span className="text-sm text-muted">
+                    {e.guestCount} guest{e.guestCount === 1 ? "" : "s"}
+                  </span>
                 </Link>
               </li>
             ))}

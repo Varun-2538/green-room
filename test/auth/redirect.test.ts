@@ -27,7 +27,12 @@ describe("postLoginDestination", () => {
     expect(postLoginDestination("/desk", true)).toBe("/desk");
   });
 
-  it("sends an unverified creator to World ID first", async () => {
+  it("sends an unverified creator to their desk, where setup includes World ID", async () => {
+    const { postLoginDestination } = await import("@/lib/auth/redirect");
+    expect(postLoginDestination("/desk", false)).toBe("/desk");
+  });
+
+  it("sends an unverified creator to World ID first when they came for something else", async () => {
     const { postLoginDestination } = await import("@/lib/auth/redirect");
     expect(postLoginDestination("/add?n=Arun", false)).toBe("/verify?next=%2Fadd%3Fn%3DArun");
   });
