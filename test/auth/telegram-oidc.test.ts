@@ -100,6 +100,18 @@ describe("verifyIdToken", () => {
     });
   });
 
+  it("accepts the user id as a string of digits, as Telegram actually sends it", async () => {
+    const { jwks, sign } = await signer();
+    const user = await verifyIdToken(await sign({ ...claims, id: "9290244481" }), { clientId: CLIENT_ID, jwks, now: NOW });
+    expect(user.id).toBe(9290244481);
+  });
+
+  it("rejects a user id that isn't a positive whole number", async () => {
+    const { jwks, sign } = await signer();
+    await expect(verifyIdToken(await sign({ ...claims, id: "12ab" }), { clientId: CLIENT_ID, jwks, now: NOW })).rejects.toThrow(/user id/i);
+    await expect(verifyIdToken(await sign({ ...claims, id: "-5" }), { clientId: CLIENT_ID, jwks, now: NOW })).rejects.toThrow(/user id/i);
+  });
+
   it("falls back to the full name when there is no given name", async () => {
     const { jwks, sign } = await signer();
     const user = await verifyIdToken(await sign({ sub: "s", id: 7, name: "Arun" }), { clientId: CLIENT_ID, jwks, now: NOW });

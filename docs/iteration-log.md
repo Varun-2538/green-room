@@ -57,3 +57,4 @@ What we tested, what it taught us, and what we changed. Times are IST.
 - [ ] Does `t.me/<bot>?text=` pre-fill the message to the agent on phone and desktop? ("Copy prompt" works either way.)
 - [ ] A real brief and draft with the xAI key
 - [ ] 2–3 real guests invited, and at least one answer
+- Telegram OIDC id_token: docs show `id` as a number, but real tokens send it as a string of digits. Found from production logs (claim names/types only), fixed with a test.

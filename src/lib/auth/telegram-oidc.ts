@@ -63,7 +63,8 @@ export async function exchangeCode(o: {
 }
 
 const claimsSchema = z.object({
-  id: z.number().int().positive({ message: "Token has no Telegram user id" }),
+  // Telegram's docs show a number, but real tokens carry the id as a string of digits.
+  id: z.union([z.number(), z.string().regex(/^[0-9]+$/).transform(Number)]).pipe(z.number().int().positive().max(Number.MAX_SAFE_INTEGER)),
   name: z.string().optional(),
   given_name: z.string().optional(),
   family_name: z.string().optional(),
