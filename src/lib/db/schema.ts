@@ -106,6 +106,10 @@ export const invites = pgTable("invites", {
   answer: inviteAnswer("answer"),
   answerNote: text("answer_note"),
   answeredAt: timestamp("answered_at", { withTimezone: true }),
+  /** The Telegram account that first answered; only it may change the answer. */
+  answeredByTelegramId: bigint("answered_by_telegram_id", { mode: "number" }),
+  answeredByName: text("answered_by_name"),
+  answeredByUsername: text("answered_by_username"),
 });
 
 export const chatMessages = pgTable("chat_messages", {

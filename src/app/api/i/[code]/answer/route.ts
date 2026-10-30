@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { currentCreator } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { recordAnswer } from "@/lib/invites";
 import { checkRateLimit } from "@/lib/ratelimit";
@@ -21,7 +22,23 @@ export async function POST(request: Request, ctx: RouteContext<"/api/i/[code]/an
   const limit = await checkRateLimit(db, `answer:${code}`, 10, 3600);
   if (!limit.allowed) return NextResponse.json({ error: "Too many changes. Try again later." }, { status: 429 });
 
-  const card = await recordAnswer(db, code, parsed.data);
-  if (!card) return NextResponse.json({ error: "Unknown invite." }, { status: 404 });
+  const viewer = await currentCreator(db);
+  if (!viewer) return NextResponse.json({ error: "Log in with Telegram to answer.", login: true }, { status: 401 });
+
+  const result = await recordAnswer(db, code, parsed.data, {
+    telegramId: viewer.telegramId,
+    name: viewer.name,
+    ...(viewer.username ? { username: viewer.username } : {}),
+  });
+  if (!result.ok) {
+    const refusal = {
+      not_found: ["Unknown invite.", 404],
+      claimed: ["This invite has already been answered by someone else.", 409],
+      own_invite: ["This is your own invite. Send the link to your guest.", 403],
+    } as const;
+    const [error, status] = refusal[result.reason];
+    return NextResponse.json({ error }, { status });
+  }
+  const { card } = result;
   return NextResponse.json({ answer: card.answer, answerNote: card.answerNote ?? null, chosenSlot: card.chosenSlot });
 }

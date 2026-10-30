@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, isNull } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNull, or } from "drizzle-orm";
 import { customAlphabet } from "nanoid";
 import type { Db } from "@/lib/db/client";
 import { parseIstLocal } from "@/lib/calendar";
@@ -89,6 +89,8 @@ export async function listInvitesForGuest(db: Db, creatorId: string, guestId: st
 
 export type InviteCard = {
   code: string;
+  /** Server-side only: lets the card page recognise the creator. Never sent to the browser. */
+  creatorId: string;
   message: string;
   angle: string;
   timeOptions: TimeSlot[];
@@ -102,6 +104,8 @@ export type InviteCard = {
   openedAt: Date | null;
   answer?: InviteAnswer;
   answerNote?: string;
+  /** Who claimed the invite by answering it. Shown to the creator only. */
+  answeredBy?: Responder;
 };
 
 const MAX_ANSWER_NOTE = 500;
@@ -130,6 +134,7 @@ export async function getInviteByCode(db: Db, code: string): Promise<InviteCard 
   const { invite, creator, guestName } = row;
   return {
     code: invite.code,
+    creatorId: invite.creatorId,
     message: invite.message,
     angle: invite.angle,
     timeOptions: invite.timeOptions,
@@ -143,6 +148,15 @@ export async function getInviteByCode(db: Db, code: string): Promise<InviteCard 
     openedAt: invite.openedAt,
     ...(invite.answer ? { answer: invite.answer } : {}),
     ...(invite.answerNote ? { answerNote: invite.answerNote } : {}),
+    ...(invite.answeredByTelegramId !== null
+      ? {
+          answeredBy: {
+            telegramId: invite.answeredByTelegramId,
+            name: invite.answeredByName ?? "Someone",
+            ...(invite.answeredByUsername ? { username: invite.answeredByUsername } : {}),
+          },
+        }
+      : {}),
   };
 }
 
@@ -154,22 +168,52 @@ export async function markOpened(db: Db, code: string, viewerCreatorId: string |
   await setGuestStatus(db, row.invite.creatorId, row.invite.guestId, "invite_opened");
 }
 
+/** The Telegram account answering an invite. */
+export type Responder = { telegramId: number; name: string; username?: string };
+
+export type AnswerResult = { ok: true; card: InviteCard } | { ok: false; reason: "not_found" | "claimed" | "own_invite" };
+
+/**
+ * Records a guest's answer. The first Telegram account to answer claims the invite: after that only it can
+ * change the answer, so a forwarded link can't be answered by someone else. The creator can't answer their own.
+ */
 export async function recordAnswer(
   db: Db,
   code: string,
   a: { answer: InviteAnswer; note?: string; slot?: number },
-): Promise<InviteCard | null> {
+  responder: Responder,
+): Promise<AnswerResult> {
   const row = await findInvite(db, code);
-  if (!row) return null;
+  if (!row) return { ok: false, reason: "not_found" };
+  if (row.creator.telegramId === responder.telegramId) return { ok: false, reason: "own_invite" };
+  const claimedBy = row.invite.answeredByTelegramId;
+  if (claimedBy !== null && claimedBy !== responder.telegramId) return { ok: false, reason: "claimed" };
   const note = a.note?.trim().slice(0, MAX_ANSWER_NOTE) || null;
   // A slot only counts for a yes, and only if it is one the creator offered.
   const slot = a.slot;
   const chosenSlot =
     a.answer === "accepted" && Number.isInteger(slot) && slot !== undefined && slot >= 0 && slot < row.invite.timeOptions.length ? slot : null;
-  await db
+  const claimed = await db
     .update(invites)
-    .set({ answer: a.answer, answerNote: note, answeredAt: new Date(), chosenSlot })
-    .where(eq(invites.id, row.invite.id));
+    .set({
+      answer: a.answer,
+      answerNote: note,
+      answeredAt: new Date(),
+      chosenSlot,
+      answeredByTelegramId: responder.telegramId,
+      answeredByName: responder.name,
+      answeredByUsername: responder.username ?? null,
+    })
+    // Guarded write: two people answering at once can't both claim it.
+    .where(
+      and(
+        eq(invites.id, row.invite.id),
+        or(isNull(invites.answeredByTelegramId), eq(invites.answeredByTelegramId, responder.telegramId)),
+      ),
+    )
+    .returning({ id: invites.id });
+  if (claimed.length === 0) return { ok: false, reason: "claimed" };
   await setGuestStatus(db, row.invite.creatorId, row.invite.guestId, ANSWER_EVENT[a.answer]);
-  return getInviteByCode(db, code);
+  const card = await getInviteByCode(db, code);
+  return card ? { ok: true, card } : { ok: false, reason: "not_found" };
 }

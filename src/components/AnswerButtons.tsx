@@ -16,7 +16,12 @@ const THANKS: Record<Answer, string> = {
   declined: "Thanks for letting them know.",
 };
 
+/** anonymous: not logged in · creator: the sender · claimed: someone else already answered · guest: may answer */
+export type ViewerState = "anonymous" | "creator" | "claimed" | "guest";
+
 type Props = {
+  viewerState: ViewerState;
+  loginHref: string;
   code: string;
   appUrl: string;
   showName: string;
@@ -62,6 +67,34 @@ export function AnswerButtons(props: Props) {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (props.viewerState === "anonymous") {
+    return (
+      <div className="space-y-2 text-center">
+        <a
+          href={props.loginHref}
+          className="inline-flex items-center gap-2 rounded-full bg-[#2AABEE] px-5 py-3 font-medium text-white hover:bg-[#229ED9]"
+        >
+          Log in with Telegram to answer
+        </a>
+        <p className="text-xs text-muted">
+          So {creatorName} knows it&apos;s really you. Only your name and username are shared with them.
+        </p>
+      </div>
+    );
+  }
+
+  if (props.viewerState === "creator") {
+    return (
+      <p className="rounded-xl bg-background p-3 text-center text-sm text-muted">
+        This is your invite, as your guest will see it. Send them the link; their answer appears on your desk.
+      </p>
+    );
+  }
+
+  if (props.viewerState === "claimed") {
+    return <p className="rounded-xl bg-background p-3 text-center text-sm text-muted">This invite has already been answered.</p>;
   }
 
   if (answer && !editing) {

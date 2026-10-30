@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { AnswerButtons } from "@/components/AnswerButtons";
+import { AnswerButtons, type ViewerState } from "@/components/AnswerButtons";
 import { Badge, Card } from "@/components/ui";
 import { currentCreator } from "@/lib/auth/session";
 import { isLinkPreviewBot } from "@/lib/bots";
@@ -24,11 +24,20 @@ export default async function InvitePage(props: PageProps<"/i/[code]">) {
   const card = await getInviteByCode(db, code);
   if (!card) notFound();
 
+  const viewer = await currentCreator(db);
   const userAgent = (await headers()).get("user-agent");
-  if (!isLinkPreviewBot(userAgent)) {
-    const viewer = await currentCreator(db);
-    await markOpened(db, code, viewer?.id ?? null);
-  }
+  if (!isLinkPreviewBot(userAgent)) await markOpened(db, code, viewer?.id ?? null);
+
+  // Who is looking decides what they can do: answering needs a Telegram login, and the first person to
+  // answer claims the invite. Others never see the answer or who gave it.
+  const viewerState: ViewerState = !viewer
+    ? "anonymous"
+    : viewer.id === card.creatorId
+      ? "creator"
+      : card.answeredBy && card.answeredBy.telegramId !== viewer.telegramId
+        ? "claimed"
+        : "guest";
+  const isClaimant = viewerState === "guest" && card.answeredBy?.telegramId === viewer?.telegramId;
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
@@ -70,8 +79,10 @@ export default async function InvitePage(props: PageProps<"/i/[code]">) {
           guestName={card.guestName}
           angle={card.angle}
           timeOptions={card.timeOptions}
-          initialAnswer={card.answer}
-          initialSlot={card.chosenSlot}
+          viewerState={viewerState}
+          loginHref={`/api/auth/telegram/start?next=${encodeURIComponent(`/i/${card.code}`)}`}
+          initialAnswer={isClaimant ? card.answer : undefined}
+          initialSlot={isClaimant ? card.chosenSlot : null}
         />
       </Card>
       <p className="text-center text-xs text-muted">

@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { postLoginDestination } from "@/lib/auth/redirect";
 import { createSessionCookie, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth/session";
 import { exchangeCode, LOGIN_STATE_COOKIE, readLoginState, verifyIdToken } from "@/lib/auth/telegram-oidc";
 import { upsertCreatorFromTelegram } from "@/lib/creators";
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
     });
     const user = await verifyIdToken(idToken, { clientId: env.TELEGRAM_CLIENT_ID });
     const creator = await upsertCreatorFromTelegram(getDb(), user);
-    const destination = creator.verifiedAt ? saved.next : `/verify?next=${encodeURIComponent(saved.next)}`;
+    const destination = postLoginDestination(saved.next, Boolean(creator.verifiedAt));
 
     const response = NextResponse.redirect(new URL(destination, env.NEXT_PUBLIC_APP_URL));
     response.cookies.set(SESSION_COOKIE, await createSessionCookie(creator.id), sessionCookieOptions);

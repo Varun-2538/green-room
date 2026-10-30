@@ -43,6 +43,16 @@ export function InviteHistory({
               <span className="text-muted">sent {when(invite.createdAt)}</span>
               {invite.openedAt ? <span className="text-muted">· opened {when(invite.openedAt)}</span> : null}
               {invite.answeredAt ? <span className="text-muted">· answered {when(invite.answeredAt)}</span> : null}
+              {invite.answeredByName ? (
+                <span className="font-medium">
+                  by {invite.answeredByName}
+                  {invite.answeredByUsername ? (
+                    <a href={`https://t.me/${invite.answeredByUsername}`} target="_blank" rel="noreferrer" className="ml-1 text-brand underline">
+                      @{invite.answeredByUsername}
+                    </a>
+                  ) : null}
+                </span>
+              ) : null}
               <a href={`${appUrl}/i/${invite.code}`} target="_blank" rel="noreferrer" className="text-brand underline">
                 card
               </a>

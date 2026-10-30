@@ -157,36 +157,67 @@ describe("guest invite card", () => {
     expect(await status(db, guest.id)).toBe("opened");
   });
 
+  const arun = { telegramId: 5001, name: "Arun Philips", username: "arunphilips" };
+  const stranger = { telegramId: 5002, name: "Someone Else" };
+  const card = async (p: ReturnType<typeof recordAnswer>) => {
+    const r = await p;
+    if (!r.ok) throw new Error(r.reason);
+    return r.card;
+  };
+
   it("records an answer and lets the guest change their mind", async () => {
     const { db, guest, code } = await invited();
-    expect((await recordAnswer(db, code, { answer: "accepted" }))?.answer).toBe("accepted");
+    expect((await card(recordAnswer(db, code, { answer: "accepted" }, arun))).answer).toBe("accepted");
     expect(await status(db, guest.id)).toBe("accepted");
-    await recordAnswer(db, code, { answer: "declined", note: "Travelling, sorry" });
+    await recordAnswer(db, code, { answer: "declined", note: "Travelling, sorry" }, arun);
     expect(await status(db, guest.id)).toBe("declined");
     expect(await getInviteByCode(db, code)).toMatchObject({ answer: "declined", answerNote: "Travelling, sorry" });
   });
 
+  it("records who answered, from their Telegram login", async () => {
+    const { db, code } = await invited();
+    await recordAnswer(db, code, { answer: "accepted" }, arun);
+    expect(await getInviteByCode(db, code)).toMatchObject({
+      answeredBy: { telegramId: 5001, name: "Arun Philips", username: "arunphilips" },
+    });
+  });
+
+  it("lets only the first person to answer change the answer", async () => {
+    const { db, guest, code } = await invited();
+    await recordAnswer(db, code, { answer: "accepted" }, arun);
+    expect(await recordAnswer(db, code, { answer: "declined" }, stranger)).toEqual({ ok: false, reason: "claimed" });
+    expect(await status(db, guest.id)).toBe("accepted");
+  });
+
+  it("refuses the creator answering their own invite", async () => {
+    const { db, code, creator } = await invited();
+    expect(await recordAnswer(db, code, { answer: "accepted" }, { telegramId: creator.telegramId, name: "Varun" })).toEqual({
+      ok: false,
+      reason: "own_invite",
+    });
+  });
+
   it("records which time slot the guest picked when they say yes", async () => {
     const { db, code } = await invited();
-    expect((await recordAnswer(db, code, { answer: "accepted", slot: 1 }))?.chosenSlot).toBe(1);
+    expect((await card(recordAnswer(db, code, { answer: "accepted", slot: 1 }, arun))).chosenSlot).toBe(1);
   });
 
   it("ignores a slot that doesn't exist, and clears the slot when the guest declines", async () => {
     const { db, code } = await invited();
-    expect((await recordAnswer(db, code, { answer: "accepted", slot: 7 }))?.chosenSlot).toBeNull();
-    await recordAnswer(db, code, { answer: "accepted", slot: 0 });
-    expect((await recordAnswer(db, code, { answer: "declined" }))?.chosenSlot).toBeNull();
+    expect((await card(recordAnswer(db, code, { answer: "accepted", slot: 7 }, arun))).chosenSlot).toBeNull();
+    await recordAnswer(db, code, { answer: "accepted", slot: 0 }, arun);
+    expect((await card(recordAnswer(db, code, { answer: "declined" }, arun))).chosenSlot).toBeNull();
   });
 
   it("limits the answer note to 500 characters", async () => {
     const { db, code } = await invited();
-    const card = await recordAnswer(db, code, { answer: "time_suggested", note: "n".repeat(900) });
-    expect(card?.answerNote).toHaveLength(500);
+    const answered = await card(recordAnswer(db, code, { answer: "time_suggested", note: "n".repeat(900) }, arun));
+    expect(answered.answerNote).toHaveLength(500);
   });
 
-  it("returns null when answering an unknown code", async () => {
+  it("reports not_found when answering an unknown code", async () => {
     const { db } = await setup();
-    expect(await recordAnswer(db, "nope-nope-no", { answer: "accepted" })).toBeNull();
+    expect(await recordAnswer(db, "nope-nope-no", { answer: "accepted" }, arun)).toEqual({ ok: false, reason: "not_found" });
   });
 
   it("shows no verified badge when the creator is not verified", async () => {
