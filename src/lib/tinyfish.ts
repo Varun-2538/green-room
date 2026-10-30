@@ -4,6 +4,8 @@ import { env } from "@/lib/env";
 const SEARCH_URL = "https://api.search.tinyfish.ai";
 const FETCH_URL = "https://api.fetch.tinyfish.ai";
 const MAX_FETCH_URLS = 10;
+const PER_URL_TIMEOUT_MS = 15_000;
+const REQUEST_TIMEOUT_MS = 25_000;
 
 export class TinyFishError extends Error {
   constructor(
@@ -38,7 +40,7 @@ type Options = { purpose?: string; fetch?: typeof fetch; apiKey?: string };
 async function call(url: string, init: RequestInit, o: Options): Promise<unknown> {
   const headers = new Headers(init.headers);
   headers.set("X-API-Key", o.apiKey ?? env.TINYFISH_API_KEY);
-  const response = await (o.fetch ?? fetch)(url, { ...init, headers });
+  const response = await (o.fetch ?? fetch)(url, { ...init, headers, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
   if (!response.ok) throw new TinyFishError(`TinyFish answered ${response.status}`, response.status);
   return response.json();
 }
@@ -68,7 +70,12 @@ export async function tinyfishFetch(
     {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ urls: unique, format: "markdown", ...(o.purpose ? { purpose: o.purpose } : {}) }),
+      body: JSON.stringify({
+        urls: unique,
+        format: "markdown",
+        per_url_timeout_ms: PER_URL_TIMEOUT_MS,
+        ...(o.purpose ? { purpose: o.purpose } : {}),
+      }),
     },
     o,
   )) as { results?: unknown[]; errors?: { url?: string; error?: string }[] };

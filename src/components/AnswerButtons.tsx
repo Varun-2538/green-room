@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button, inputClass } from "@/components/ui";
+import { readJsonResponse } from "@/lib/http";
 
 type Answer = "accepted" | "time_suggested" | "declined";
 
@@ -35,8 +36,8 @@ export function AnswerButtons({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ answer: choice, note: note || undefined }),
       });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Could not send your answer.");
+      const result = await readJsonResponse(response);
+      if (!result.ok) throw new Error(result.error);
       setAnswer(choice);
       setEditing(false);
     } catch (e) {

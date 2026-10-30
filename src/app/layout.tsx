@@ -22,9 +22,14 @@ async function Nav() {
   return (
     <header className="border-b border-line bg-surface/70 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <Link href={creator ? "/desk" : "/"} className="font-display text-xl font-semibold text-brand">
-          Green Room
-        </Link>
+        {creator ? (
+          <Link href="/desk" className="font-display text-xl font-semibold text-brand">
+            Green Room
+          </Link>
+        ) : (
+          // Signed-out visitors are mostly guests opening an invite: no link to the creator pitch, which names Mosaic.
+          <span className="font-display text-xl font-semibold text-brand">Green Room</span>
+        )}
         {creator ? (
           <nav className="flex items-center gap-4 text-sm">
             <Link href="/desk" className="hover:text-brand">Desk</Link>

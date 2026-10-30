@@ -6,16 +6,14 @@ import { Badge, Card } from "@/components/ui";
 import { currentCreator } from "@/lib/auth/session";
 import { isLinkPreviewBot } from "@/lib/bots";
 import { getDb } from "@/lib/db/client";
+import { inviteMetadata } from "@/lib/invite-metadata";
 import { getInviteByCode, markOpened } from "@/lib/invites";
 
 const CODE = /^[A-Za-z0-9_-]{12}$/;
 
 export async function generateMetadata(props: PageProps<"/i/[code]">): Promise<Metadata> {
   const { code } = await props.params;
-  const card = CODE.test(code) ? await getInviteByCode(getDb(), code) : null;
-  if (!card) return { title: "Green Room" };
-  const title = `${card.creatorName} invites you to ${card.showName}`;
-  return { title, openGraph: { title, description: card.angle || "An invitation from Green Room" } };
+  return inviteMetadata(CODE.test(code) ? await getInviteByCode(getDb(), code) : null);
 }
 
 export default async function InvitePage(props: PageProps<"/i/[code]">) {

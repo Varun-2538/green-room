@@ -11,6 +11,7 @@ import { env } from "@/lib/env";
 import { getGuest } from "@/lib/guests";
 import { DAILY_INVITE_LIMIT, invitesLeftToday, listInvitesForGuest } from "@/lib/invites";
 import { InviteBuilder } from "@/components/InviteBuilder";
+import { InviteHistory } from "@/components/InviteHistory";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -54,8 +55,8 @@ export default async function GuestPage(props: PageProps<"/guest/[id]">) {
             verified={Boolean(creator.verifiedAt)}
             invitesLeft={invitesLeft}
             dailyLimit={DAILY_INVITE_LIMIT}
-            existingUrls={invites.map((i) => `${env.NEXT_PUBLIC_APP_URL}/i/${i.code}`)}
           />
+          <InviteHistory invites={invites} appUrl={env.NEXT_PUBLIC_APP_URL} />
         </Card>
 
         <Card className="space-y-3 lg:row-start-1">

@@ -117,6 +117,24 @@ describe("buildBrief", () => {
     expect(ai.prompts()).toHaveLength(0);
   });
 
+  it("falls back to an honest brief when TinyFish search and fetch both throw", async () => {
+    const ai = mockJsonModel(modelAnswer);
+    const brief = await buildBrief(input, {
+      search: vi.fn(async () => { throw new Error("TinyFish 402"); }),
+      fetchPages: vi.fn(async () => { throw new Error("timeout"); }),
+      model: ai.model,
+    });
+    expect(brief.limited).toBe(true);
+    expect(brief.facts).toEqual([]);
+    expect(brief.story).toContain("limited public information");
+  });
+
+  it("still builds a brief from fetched pages when only search throws", async () => {
+    const { deps: d } = deps({ search: vi.fn(async () => { throw new Error("TinyFish 500"); }) });
+    const brief = await buildBrief(input, d);
+    expect(brief.facts).toEqual([{ text: "Worked at Nethermind", sourceUrl: "https://github.com/0xYudhishthra" }]);
+  });
+
   it("still builds a brief when every fetch fails but search found something", async () => {
     const { deps: d } = deps({ fetchPages: vi.fn(async () => ({ pages: [], failed: [{ url: "x", error: "timeout" }] })) });
     const brief = await buildBrief(input, d);

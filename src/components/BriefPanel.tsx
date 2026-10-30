@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Badge, Button } from "@/components/ui";
 import type { Brief } from "@/lib/brief";
+import { readJsonResponse } from "@/lib/http";
 
 export function BriefPanel({ guestId, initial }: { guestId: string; initial: Brief | null }) {
   const router = useRouter();
@@ -20,9 +21,9 @@ export function BriefPanel({ guestId, initial }: { guestId: string; initial: Bri
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ guestId }),
       });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Research failed.");
-      setBrief(body as Brief);
+      const result = await readJsonResponse<Brief>(response);
+      if (!result.ok) throw new Error(result.error);
+      setBrief(result.body);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Research failed.");

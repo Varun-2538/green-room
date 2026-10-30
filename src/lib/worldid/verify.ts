@@ -6,18 +6,23 @@ import { creators } from "@/lib/db/schema";
 export const WORLD_ACTION = "green-room-creator";
 const EXPECTED_ENVIRONMENT = "production";
 
-/** Nullifiers are 0x-prefixed 256-bit hex; Postgres stores them as NUMERIC(78,0) decimal strings. */
-export function hexToDecimal(hex: string): string {
-  if (!/^0x[0-9a-fA-F]+$/.test(hex)) throw new Error("Not a hex string");
-  return BigInt(hex).toString(10);
+/**
+ * Nullifiers arrive as 0x-prefixed hex (World ID docs) or as decimal (IDKit v4 types say so);
+ * Postgres stores them as NUMERIC(78,0) decimal strings.
+ */
+export function nullifierToDecimal(value: string): string {
+  if (!/^(0x[0-9a-fA-F]+|[0-9]+)$/.test(value)) throw new Error("Nullifier is neither hex nor decimal");
+  return BigInt(value).toString(10);
 }
 
+// v4 only: a v3 (legacy) proof gives the same person a different nullifier, which would allow a second account.
 const proofSchema = z.looseObject({
+  protocol_version: z.literal("4.0"),
   environment: z.string(),
   responses: z.array(z.looseObject({ nullifier: z.string() })).min(1),
 });
 
-export type WorldIdVerification = { ok: true; nullifierHex: string } | { ok: false; reason: string };
+export type WorldIdVerification = { ok: true; nullifier: string } | { ok: false; reason: string };
 
 /** Forwards an IDKit result unchanged to the Developer Portal and returns its nullifier when valid. */
 export async function verifyWorldIdProof(
@@ -41,16 +46,16 @@ export async function verifyWorldIdProof(
   if (verdict.environment !== undefined && verdict.environment !== EXPECTED_ENVIRONMENT) {
     return { ok: false, reason: "wrong_environment" };
   }
-  return { ok: true, nullifierHex: parsed.data.responses[0].nullifier };
+  return { ok: true, nullifier: parsed.data.responses[0].nullifier };
 }
 
 /** Ties one World ID to one Green Room account, so a person cannot multiply their invite limit. */
 export async function linkNullifier(
   db: Db,
   creatorId: string,
-  nullifierHex: string,
+  rawNullifier: string,
 ): Promise<{ ok: true } | { ok: false; reason: "already_linked_elsewhere" }> {
-  const nullifier = hexToDecimal(nullifierHex);
+  const nullifier = nullifierToDecimal(rawNullifier);
   const [owner] = await db
     .select({ id: creators.id })
     .from(creators)

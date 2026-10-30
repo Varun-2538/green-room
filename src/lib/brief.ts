@@ -78,9 +78,14 @@ export async function buildBrief(input: BriefInput, deps: BriefDeps): Promise<Br
 
   const handle = handleFrom(links);
   const query = handle ? `"${name}" ${handle}` : `"${name}"`;
-  const results = await deps.search(query, { purpose: `Research ${name}'s public work before inviting them onto a podcast` });
+  // A whole-request TinyFish failure (out of credits, 5xx, timeout) degrades to fewer sources, never to no brief.
+  const results = await deps
+    .search(query, { purpose: `Research ${name}'s public work before inviting them onto a podcast` })
+    .catch(() => []);
   const toFetch = [...new Set([...links, ...results.slice(0, SEARCH_RESULTS_TO_FETCH).map((r) => r.url)])];
-  const { pages } = await deps.fetchPages(toFetch, { purpose: `Learn ${name}'s story and recent work` });
+  const { pages } = await deps
+    .fetchPages(toFetch, { purpose: `Learn ${name}'s story and recent work` })
+    .catch(() => ({ pages: [], failed: [] }));
 
   const sources = [...new Set([...pages.flatMap((p) => [p.url, p.finalUrl]), ...results.map((r) => r.url)])];
   const limited = pages.length === 0;

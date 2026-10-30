@@ -24,8 +24,8 @@ export function ConfirmHandoff({
       ))}
       <EpisodePicker episodes={episodes} defaultEpisodeId={defaultEpisodeId} />
       <label className="block space-y-1">
-        <span className="text-sm font-medium">Your note (optional, only you see it)</span>
-        <textarea name="creatorNote" rows={2} maxLength={500} className={inputClass} placeholder="Why I want them on the show" />
+        <span className="text-sm font-medium">Your own note (optional, only you see it)</span>
+        <textarea name="creatorNote" rows={2} maxLength={500} className={inputClass} placeholder="In your own words. Don't paste anything from Mosaic." />
       </label>
       <Button disabled={pending || episodes.length === 0}>{pending ? "Adding…" : "Add to desk"}</Button>
       {state.error ? <p className="text-sm text-bad">{state.error}</p> : null}

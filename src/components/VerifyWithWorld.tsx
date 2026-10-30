@@ -48,7 +48,7 @@ export function VerifyWithWorld({ appId, rpId, action, next }: { appId: `app_${s
           app_id={appId}
           action={action}
           rp_context={rpContext}
-          allow_legacy_proofs={true}
+          allow_legacy_proofs={false}
           constraints={constraints}
           handleVerify={async (result) => {
             const response = await fetch("/api/verify-proof", {

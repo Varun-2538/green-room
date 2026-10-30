@@ -51,7 +51,8 @@ describe("tinyfishFetch", () => {
     const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://api.fetch.tinyfish.ai");
     expect(init.method).toBe("POST");
-    expect(JSON.parse(String(init.body))).toEqual({ urls: ["https://a.com", "https://b.com"], format: "markdown" });
+    expect(JSON.parse(String(init.body))).toEqual({ urls: ["https://a.com", "https://b.com"], format: "markdown", per_url_timeout_ms: 15000 });
+    expect(init.signal).toBeInstanceOf(AbortSignal);
     expect(out).toEqual({
       pages: [{ url: "https://a.com", finalUrl: "https://a.com/", title: "A", text: "hello" }],
       failed: [{ url: "https://b.com", error: "timeout" }],

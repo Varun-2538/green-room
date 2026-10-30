@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, inputClass } from "@/components/ui";
+import { readJsonResponse } from "@/lib/http";
 import type { InviteTone } from "@/lib/invite-draft";
 
 type Props = {
@@ -12,10 +13,9 @@ type Props = {
   verified: boolean;
   invitesLeft: number;
   dailyLimit: number;
-  existingUrls: string[];
 };
 
-export function InviteBuilder({ guestId, guestName, verified, invitesLeft, dailyLimit, existingUrls }: Props) {
+export function InviteBuilder({ guestId, guestName, verified, invitesLeft, dailyLimit }: Props) {
   const router = useRouter();
   const [tone, setTone] = useState<InviteTone>("warm");
   const [note, setNote] = useState("");
@@ -34,9 +34,9 @@ export function InviteBuilder({ guestId, guestName, verified, invitesLeft, daily
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ guestId, ...payload }),
     });
-    const body = await response.json();
-    if (!response.ok) throw new Error(body.error ?? "Something went wrong.");
-    return body;
+    const result = await readJsonResponse(response);
+    if (!result.ok) throw new Error(result.error);
+    return result.body;
   }
 
   async function draft() {
@@ -148,14 +148,6 @@ export function InviteBuilder({ guestId, guestName, verified, invitesLeft, daily
         </div>
       ) : null}
 
-      {existingUrls.length > 0 ? (
-        <div className="text-xs text-muted">
-          Earlier invites:{" "}
-          {existingUrls.map((u) => (
-            <a key={u} href={u} target="_blank" rel="noreferrer" className="mr-2 underline">{u.split("/").pop()}</a>
-          ))}
-        </div>
-      ) : null}
     </div>
   );
 }

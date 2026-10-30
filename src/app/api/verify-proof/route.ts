@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "World ID could not verify that proof. Please try again." }, { status: 400 });
   }
 
-  const linked = await linkNullifier(db, creator.id, verification.nullifierHex);
+  const linked = await linkNullifier(db, creator.id, verification.nullifier);
   if (!linked.ok) return NextResponse.json({ error: ALREADY_LINKED_MESSAGE }, { status: 409 });
   return NextResponse.json({ ok: true });
 }
