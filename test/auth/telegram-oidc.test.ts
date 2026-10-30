@@ -125,6 +125,14 @@ describe("verifyIdToken", () => {
     const { jwks, sign } = await signer();
     await expect(verifyIdToken(await sign({ sub: "s", name: "No Id" }), { clientId: CLIENT_ID, jwks, now: NOW })).rejects.toThrow(/user id/i);
   });
+
+  it("names the claims it did get (types only, never values) when it can't find the user id", async () => {
+    const { jwks, sign } = await signer();
+    const error = await verifyIdToken(await sign({ sub: "s", name: "Secret Name" }), { clientId: CLIENT_ID, jwks, now: NOW }).catch((e: Error) => e);
+    expect(String(error)).toContain("name:string");
+    expect(String(error)).toContain("sub:string");
+    expect(String(error)).not.toContain("Secret Name");
+  });
 });
 
 describe("login state cookie", () => {

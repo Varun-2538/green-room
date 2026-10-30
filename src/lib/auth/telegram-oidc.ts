@@ -83,7 +83,13 @@ export async function verifyIdToken(
     ...(o.now ? { currentDate: o.now } : {}),
   });
   const parsed = claimsSchema.safeParse(payload);
-  if (!parsed.success) throw new Error("Token has no Telegram user id");
+  if (!parsed.success) {
+    // Claim names and types only: enough to see a format change, never personal values.
+    const shape = Object.entries(payload)
+      .map(([k, v]) => `${k}:${Array.isArray(v) ? "array" : typeof v}`)
+      .join(", ");
+    throw new Error(`Token has no Telegram user id (claims: ${shape})`);
+  }
   const c = parsed.data;
   const firstName = c.given_name || c.name || c.preferred_username || "Telegram user";
   return {
