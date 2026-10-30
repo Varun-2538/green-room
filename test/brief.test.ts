@@ -191,3 +191,15 @@ describe("schemas sent to the model (Groq strict structured output)", () => {
     expect(brief.recentWork).toEqual([{ title: "EIP Hub talk", url: "https://eiphub.example/talk" }]);
   });
 });
+
+describe("prompt size (Groq free tier: 8,000 tokens per minute)", () => {
+  it("sends at most 2,500 characters per page and 9,000 characters of page text in total", async () => {
+    const big = Array.from({ length: 5 }, (_, i) => ({ url: `https://p${i}.example`, finalUrl: `https://p${i}.example`, text: `${i}`.repeat(20_000) }));
+    const ai = mockJsonModel(modelAnswer);
+    await buildBrief(input, { search: vi.fn(async () => []), fetchPages: vi.fn(async () => ({ pages: big, failed: [] })), model: ai.model });
+    const prompt = ai.prompts()[0];
+    const pageChars = big.map((p, i) => (prompt.match(new RegExp(`${i}{100,}`))?.[0].length ?? 0));
+    expect(Math.max(...pageChars)).toBeLessThanOrEqual(2_500);
+    expect(pageChars.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(9_000);
+  });
+});

@@ -21,7 +21,9 @@ export type BriefDeps = { search: typeof tinyfishSearch; fetchPages: typeof tiny
 
 const QUESTION_COUNT = 8;
 const SEARCH_RESULTS_TO_FETCH = 3;
-const PAGE_CHARS = 6000;
+// Groq's free tier allows 8,000 tokens a minute; ~9,000 characters of page text keeps a brief near 2,500 prompt tokens.
+const PAGE_CHARS = 2_500;
+const TOTAL_PAGE_CHARS = 9_000;
 const SOCIAL_HOSTS = ["x.com", "twitter.com", "github.com", "youtube.com", "linkedin.com", "instagram.com"];
 
 const FALLBACK_QUESTIONS = [
@@ -66,6 +68,16 @@ function handleFrom(links: string[]): string | undefined {
   return undefined;
 }
 
+/** Trims each page, then stops adding text once the total budget is spent (earlier pages are the guest's own links). */
+function budgetPages<T extends { text: string }>(pages: T[]): T[] {
+  let left = TOTAL_PAGE_CHARS;
+  return pages.map((p) => {
+    const text = p.text.slice(0, Math.min(PAGE_CHARS, left));
+    left -= text.length;
+    return { ...p, text };
+  });
+}
+
 function toEightQuestions(questions: string[]): string[] {
   const cleaned = questions.map((q) => q.trim()).filter(Boolean);
   const padding = FALLBACK_QUESTIONS.filter((q) => !cleaned.includes(q));
@@ -103,7 +115,7 @@ export async function buildBrief(input: BriefInput, deps: BriefDeps): Promise<Br
   }
 
   const sourceText = [
-    ...pages.map((p) => `SOURCE ${p.finalUrl}\nTITLE ${p.title ?? ""}\n${p.text.slice(0, PAGE_CHARS)}`),
+    ...budgetPages(pages).map((p) => `SOURCE ${p.finalUrl}\nTITLE ${p.title ?? ""}\n${p.text}`),
     ...results.map((r) => `SOURCE ${r.url}\nSEARCH SNIPPET ${r.title}: ${r.snippet}`),
   ].join("\n\n---\n\n");
 
