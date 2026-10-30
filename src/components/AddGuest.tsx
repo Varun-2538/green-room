@@ -40,6 +40,7 @@ export function AddGuestForm({ episodeId }: { episodeId: string }) {
       <input type="hidden" name="episodeId" value={episodeId} />
       <input name="n" required maxLength={120} placeholder="Guest name" className={inputClass} />
       <div className="grid gap-2 sm:grid-cols-2">
+        <input name="tg" maxLength={40} placeholder="Telegram @username" className={inputClass} />
         <input name="x" type="url" placeholder="X / Twitter link" className={inputClass} />
         <input name="gh" type="url" placeholder="GitHub link" className={inputClass} />
         <input name="li" type="url" placeholder="LinkedIn link" className={inputClass} />

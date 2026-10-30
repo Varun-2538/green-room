@@ -6,7 +6,7 @@ import { requireCreator } from "@/lib/auth/session";
 import { updateSettings } from "@/lib/creators";
 import { getDb } from "@/lib/db/client";
 import { createEpisode } from "@/lib/episodes";
-import { addGuest, NotFoundError, setGuestStatus } from "@/lib/guests";
+import { addGuest, NotFoundError, setGuestStatus, setGuestTelegram } from "@/lib/guests";
 import { ALLOWED_PARAMS, parseHandoff } from "@/lib/handoff";
 import { completeOnboarding, type OnboardingAnswers } from "@/lib/onboarding";
 
@@ -90,5 +90,20 @@ export async function completeOnboardingAction(answers: OnboardingAnswers): Prom
     return { error: e instanceof Error ? e.message : "Could not save your setup." };
   }
   revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/** Saves a guest's Telegram username so invites can be sent to them in one click. */
+export async function setGuestTelegramAction(guestId: string, username: string): Promise<FormState> {
+  const db = getDb();
+  const creator = await requireCreator(db);
+  if (!UUID.test(guestId)) return { error: "Guest not found." };
+  try {
+    await setGuestTelegram(db, creator.id, guestId, username);
+  } catch (e) {
+    if (e instanceof NotFoundError) return { error: "Guest not found." };
+    return { error: e instanceof Error ? e.message : "Could not save their Telegram." };
+  }
+  revalidatePath(`/guest/${guestId}`);
   return { ok: true };
 }

@@ -1,4 +1,5 @@
 import { CalendarButtons } from "@/components/CalendarButtons";
+import { SendToGuest } from "@/components/SendToGuest";
 import { Badge } from "@/components/ui";
 import { formatSlotIst } from "@/lib/calendar";
 import type { Invite } from "@/lib/db/schema";
@@ -17,6 +18,8 @@ const when = (d: Date) =>
 export function InviteHistory({
   invites,
   usesBookingLink,
+  guestId,
+  guestLinks,
   appUrl,
   showName,
   creatorName,
@@ -28,6 +31,8 @@ export function InviteHistory({
   creatorName: string;
   guestName: string;
   usesBookingLink: boolean;
+  guestId: string;
+  guestLinks: string[];
 }) {
   if (invites.length === 0) return null;
   return (
@@ -74,6 +79,9 @@ export function InviteHistory({
               <p className="rounded-xl bg-background p-2">
                 <span className="text-muted">Their note:</span> {invite.answerNote}
               </p>
+            ) : null}
+            {!invite.answer ? (
+              <SendToGuest guestId={guestId} guestName={guestName} links={guestLinks} message={invite.message} url={`${appUrl}/i/${invite.code}`} />
             ) : null}
           </li>
         );

@@ -52,6 +52,7 @@ export default async function GuestPage(props: PageProps<"/guest/[id]">) {
           <InviteBuilder
             guestId={guest.id}
             guestName={guest.name}
+            guestLinks={guest.links}
             verified={Boolean(creator.verifiedAt)}
             invitesLeft={invitesLeft}
             dailyLimit={DAILY_INVITE_LIMIT}
@@ -64,6 +65,8 @@ export default async function GuestPage(props: PageProps<"/guest/[id]">) {
             creatorName={creator.name}
             guestName={guest.name}
             usesBookingLink={Boolean(creator.schedulingUrl)}
+            guestId={guest.id}
+            guestLinks={guest.links}
           />
         </Card>
 

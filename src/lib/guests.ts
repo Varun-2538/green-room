@@ -3,6 +3,7 @@ import type { Db } from "@/lib/db/client";
 import { episodes, type Guest, guests } from "@/lib/db/schema";
 import { getEpisode } from "@/lib/episodes";
 import { applyEvent, type PipelineEvent } from "@/lib/pipeline";
+import { telegramLink } from "@/lib/send-channels";
 
 export class NotFoundError extends Error {
   constructor(what: string) {
@@ -72,5 +73,16 @@ export async function setGuestStatus(db: Db, creatorId: string, guestId: string,
     .set({ status, updatedAt: new Date() })
     .where(eq(guests.id, guestId))
     .returning();
+  return row;
+}
+
+/** Saves the guest's Telegram as their first link, so one-click send can open a chat with them. */
+export async function setGuestTelegram(db: Db, creatorId: string, guestId: string, value: string): Promise<Guest> {
+  const username = telegramLink(value);
+  if (!username) throw new Error("That isn't a Telegram username (5–32 letters, digits or _).");
+  const guest = await getGuest(db, creatorId, guestId);
+  if (!guest) throw new NotFoundError("Guest");
+  const links = [`https://t.me/${username}`, ...guest.links.filter((l) => !telegramLink(l))];
+  const [row] = await db.update(guests).set({ links, updatedAt: new Date() }).where(eq(guests.id, guest.id)).returning();
   return row;
 }

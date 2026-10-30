@@ -68,3 +68,21 @@ describe("guests", () => {
     await expect(setGuestStatus(db, other.id, guest.id, "brief_built")).rejects.toBeInstanceOf(NotFoundError);
   });
 });
+
+describe("setGuestTelegram", () => {
+  it("adds the guest's Telegram as the first link, replacing an old one", async () => {
+    const { setGuestTelegram } = await import("@/lib/guests");
+    const { db, owner, episode } = await setup();
+    const guest = await addGuest(db, owner.id, episode.id, { ...arun, links: ["https://arun.blog", "https://t.me/old_name"] });
+    const updated = await setGuestTelegram(db, owner.id, guest.id, "@arun_p");
+    expect(updated.links).toEqual(["https://t.me/arun_p", "https://arun.blog"]);
+  });
+
+  it("refuses a username that isn't one, and another creator's guest", async () => {
+    const { setGuestTelegram } = await import("@/lib/guests");
+    const { db, owner, other, episode } = await setup();
+    const guest = await addGuest(db, owner.id, episode.id, arun);
+    await expect(setGuestTelegram(db, owner.id, guest.id, "not a name")).rejects.toThrow(/Telegram username/);
+    await expect(setGuestTelegram(db, other.id, guest.id, "arun_p")).rejects.toBeInstanceOf(NotFoundError);
+  });
+});

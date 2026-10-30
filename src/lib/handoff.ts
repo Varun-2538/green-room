@@ -1,7 +1,8 @@
 import type { GuestInput } from "@/lib/guests";
+import { telegramLink } from "@/lib/send-channels";
 
 /** The only query params the desk reads. Anything else (e.g. text from a Mosaic page) is never touched. */
-export const ALLOWED_PARAMS = ["n", "x", "gh", "li", "yt", "web", "lm", "t", "ep"] as const;
+export const ALLOWED_PARAMS = ["n", "tg", "x", "gh", "li", "yt", "web", "lm", "t", "ep"] as const;
 const LINK_PARAMS = ["x", "gh", "li", "yt", "web"] as const;
 
 const MAX_NAME = 120;
@@ -32,6 +33,13 @@ export function parseHandoff(sp: URLSearchParams): HandoffResult {
 
   const warnings: string[] = [];
   const links: string[] = [];
+  // Telegram comes first: it is how one-click send reaches the guest.
+  const tg = (sp.get("tg") ?? "").trim();
+  if (tg) {
+    const username = telegramLink(tg);
+    if (username) links.push(`https://t.me/${username}`);
+    else warnings.push(`Skipped a Telegram username that isn't valid: ${tg.slice(0, 40)}`);
+  }
   for (const param of LINK_PARAMS) {
     const raw = (sp.get(param) ?? "").trim();
     if (!raw) continue;
@@ -55,7 +63,7 @@ export function parseHandoff(sp: URLSearchParams): HandoffResult {
 
 /** The message the creator sends their Agent Village agent to get guests back as "Add to desk" links. */
 export function buildAgentPrompt(o: { showName: string; topic: string; appUrl: string; episodeId: string }): string {
-  const link = `${o.appUrl}/add?n=<name>&x=<x_url>&gh=<github_url>&web=<other_url>&lm=<looking_to_meet>&t=<topic>&ep=${o.episodeId}`;
+  const link = `${o.appUrl}/add?n=<name>&tg=<telegram_username>&x=<x_url>&gh=<github_url>&web=<other_url>&lm=<looking_to_meet>&t=<topic>&ep=${o.episodeId}`;
   return [
     `Green Room: using my Mosaic pair pages and top matches, find 3 guests for my show "${o.showName}" on "${o.topic}".`,
     "For each person, look them up in the Rolodex and tell me why we fit (that part is for me only).",

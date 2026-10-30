@@ -110,3 +110,21 @@ describe("agentDeepLink", () => {
     );
   });
 });
+
+describe("Telegram in the handoff", () => {
+  it("turns a Telegram username into a t.me link, first in the list", () => {
+    const result = parseHandoff(sp("n=Arun&x=https%3A%2F%2Fx.com%2Farun&tg=%40arun_p"));
+    expect(result.ok && result.guest.links).toEqual(["https://t.me/arun_p", "https://x.com/arun"]);
+  });
+
+  it("accepts a t.me link too, and skips a username that isn't one", () => {
+    expect(parseHandoff(sp("n=Arun&tg=https%3A%2F%2Ft.me%2Farun_p"))).toMatchObject({ ok: true, guest: { links: ["https://t.me/arun_p"] } });
+    const bad = parseHandoff(sp("n=Arun&tg=not%20a%20name"));
+    expect(bad).toMatchObject({ ok: true, guest: { links: [] } });
+    expect(bad.ok && bad.warnings.join(" ")).toMatch(/Telegram/);
+  });
+
+  it("asks the agent for the guest's Telegram username", () => {
+    expect(buildAgentPrompt({ showName: "S", topic: "T", appUrl: "https://x.test", episodeId: EP })).toContain("tg=<telegram_username>");
+  });
+});
